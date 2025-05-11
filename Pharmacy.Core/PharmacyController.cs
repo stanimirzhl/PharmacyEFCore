@@ -1,0 +1,541 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using Pharmacy.Data.Data;
+using Pharmacy.Data.Data.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace Pharmacy.Core
+{
+    public class PharmacyController
+    {
+        private class NonExistentEntity : Exception
+        {
+            public NonExistentEntity(string? message) : base(message)
+            {
+            }
+        }
+        private string IdGenerator()
+        {
+            string date = DateTime.Now.ToString("dd/MM/yyyy");
+            string random = Guid.NewGuid().ToString("N")[..6].ToUpper();
+            return $"℞-{random}-{date}";
+        }
+        PharmacyDbContext context;
+
+        string message = "Entity with that name already exists, try to add something different!";
+
+        public PharmacyController(PharmacyDbContext context)
+        {
+            this.context = context;
+        }
+
+        #region AddMethods
+        public async Task AddCategory(string name, string description)
+        {
+            var category = await context.Categories.FirstOrDefaultAsync(x => x.CategoryName == name);
+            if (category != null)
+            {
+                throw new ArgumentException(message);
+            }
+            await context.Categories.AddAsync(new Category { CategoryName = name, CategoryDescription = description });
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddManufacturer(string name, string email, string website, string phone)
+        {
+            var manufacturer = await context.Manufacturers
+                .FirstOrDefaultAsync(x => x.ManufacturerName == name || x.Email == email || x.Website == website || x.Phone == phone);
+            if (manufacturer is not null)
+            {
+                throw new ArgumentException(message);
+            }
+
+            await context.Manufacturers.AddAsync(new Manufacturer
+            {
+                ManufacturerName = name,
+                Email = email,
+                Phone = phone,
+                Website = website
+            });
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddDoctor(string name, string email, string phone, string specialty)
+        {
+            var doctor = await context.Doctors
+                .FirstOrDefaultAsync(x => x.DoctorName == name || x.Email == email || x.Phone == phone);
+            if (doctor is not null)
+            {
+                throw new ArgumentException(message);
+            }
+
+            await context.Doctors.AddAsync(new Doctor
+            {
+                DoctorName = name,
+                Email = email,
+                Phone = phone,
+                Specialty = specialty
+            });
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddPatient(string name, string email, string phone, DateTime birth)
+        {
+            var patient = await context.Patients
+                .FirstOrDefaultAsync(x => x.PatientName == name || x.Email == email || x.Phone == phone);
+            if (patient is not null)
+            {
+                throw new ArgumentException(message);
+            }
+
+            await context.Patients.AddAsync(new Patient
+            {
+                PatientName = name,
+                Email = email,
+                Phone = phone,
+                DateOfBirth = birth
+            });
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddMedicine(string name, string description, int id, string dosage)
+        {
+            var medicine = await context.Medicines.FirstOrDefaultAsync(x => x.MedicineName == name);
+            if (medicine is not null)
+            {
+                throw new ArgumentException(message);
+            }
+            var category = await context.Categories
+                .Include(x => x.Medicines)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Category by the given name cannot be found, try again with valid one!");
+
+            var newMed = new Medicine
+            {
+                MedicineName = name,
+                Description = description,
+                CategoryId = id,
+                RecommendedDosage = dosage
+            };
+
+            await context.Medicines.AddAsync(newMed);
+            category.Medicines.Add(newMed);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddManufacturerMedicine(int medicineId, int manId, decimal price, int quantity)
+        {
+            var mm = await context.ManufacturerMedicines.FirstOrDefaultAsync(x => x.ManufacturerId == manId && x.MedicineId == medicineId);
+            if (mm is not null)
+            {
+                throw new ArgumentException(message);
+            }
+            var medicine = await context.Medicines
+                .Include(x => x.ManufacturerMedicines)
+                .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+            var manufacturer = await context.Manufacturers
+                .Include(x => x.ManufacturerMedicines)
+                .FirstOrDefaultAsync(x => x.Id == manId) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
+
+            var newMM = new ManufacturerMedicine
+            {
+                ManufacturerId = manId,
+                MedicineId = medicineId,
+                ManufacturerPrice = price,
+                MadeQuantity = quantity
+            };
+
+            await context.ManufacturerMedicines.AddAsync(newMM);
+            medicine.ManufacturerMedicines.Add(newMM);
+            manufacturer.ManufacturerMedicines.Add(newMM);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task RefillManufacturerMedicineStock(int manufacturerId, int medicineId, int quantity)
+        {
+            var mm = await context.ManufacturerMedicines
+                .FirstOrDefaultAsync(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId);
+
+            mm.MadeQuantity += quantity;
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddPharmacyMedicine(int manufacturerId, int medicineId, int quantity, decimal price)
+        {
+            var medicine = await context.Medicines
+                .Include(x => x.PharmacyMedicines)
+               .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            var manufacturerMedicineId = await context.ManufacturerMedicines
+                .Where(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync() ?? throw new NonExistentEntity("The manufacturer doesn't produce the desired medicine yet, try with different one!");
+
+            var manufacturerMedicine = await context.ManufacturerMedicines
+                //.Include(mm => mm.Medicine)
+                //.Include(mm => mm.Manufacturer)
+                .FirstOrDefaultAsync(mm => mm.Id == manufacturerMedicineId);
+
+            if (manufacturerMedicine.MadeQuantity < quantity)
+            {
+                throw new ArgumentOutOfRangeException("The manufacturer currently does not have enough quantity to satisfy the needs, try again with lower amount or later!");
+            }
+
+            if (price < manufacturerMedicine.ManufacturerPrice)
+            {
+                throw new ArgumentException("Pharmacy cannot sell below the manufacturer's price!");
+            }
+
+            var existingMed = await context.PharmacyMedicines
+                .FirstOrDefaultAsync(x => x.ManufacturerMedicineId == manufacturerMedicineId);
+
+            if (existingMed is not null)
+            {
+                if (existingMed.StockQuantity == 0)
+                {
+                    throw new ArgumentNullException("This medicine already exists but is out of stock, please restock and try again!");
+                }
+                else
+                {
+                    throw new ArgumentException("The medicine by the given manufacturer already exists and it is in stock, use it!");
+                }
+            }
+
+            var pm = new PharmacyMedicine
+            {
+                ManufacturerMedicineId = manufacturerMedicineId,
+                StockQuantity = quantity,
+                PharmacyPrice = price
+            };
+
+            await context.PharmacyMedicines.AddAsync(pm);
+            medicine.PharmacyMedicines.Add(pm);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddPrescription(int patiendId, int doctorId, DateTime prescribed)
+        {
+            var patient = await context.Patients
+                .Include(x => x.Prescriptions)
+                .FirstOrDefaultAsync(x => x.Id == patiendId) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
+            var doctor = await context.Doctors
+                .Include(x => x.Prescriptions)
+                .FirstOrDefaultAsync(x => x.Id == doctorId) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
+
+            var prescription = new Prescription
+            {
+                Id = IdGenerator(),
+                PatientId = patiendId,
+                DoctorId = doctorId,
+                PrescribedAt = prescribed
+            };
+
+            await context.Prescriptions.AddAsync(prescription);
+            patient.Prescriptions.Add(prescription);
+            doctor.Prescriptions.Add(prescription);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddPrescriptionMedicine(string prescriptionId, int medicineId, string dosage, int quantity)
+        {
+            var prescription = await context.Prescriptions
+                .Include(x => x.PrescriptionMedicines)
+                .FirstOrDefaultAsync(x => x.Id == prescriptionId) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
+            var medicine = await context.Medicines
+                .Include(x => x.PrescriptionMedicines)
+                .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+            var pms = await context.PharmacyMedicines
+                .Where(x => x.ManufacturerMedicine.ManufacturerId == medicineId)
+                .Where(x => x.StockQuantity > 0)
+                .Include(x => x.ManufacturerMedicine)
+                .OrderBy(x => x.ManufacturerMedicine.ManufacturerPrice)
+                .FirstAsync() ?? throw new NonExistentEntity("The desired medicine is not available!");
+
+            if (pms.StockQuantity < quantity)
+            {
+                if (pms.StockQuantity == 0)
+                {
+                    var ex = new ArgumentNullException("This medicine is out of stock, please restock and try again!");
+                    ex.Data["manufacturerId"] = pms.ManufacturerMedicine.ManufacturerId;
+                    throw ex;
+                }
+                var ex2 = new ArgumentOutOfRangeException("The pharmacy currently does not have enough quantity to satisfy the needs, try again with lower amount or later!");
+                ex2.Data["manufacturerId"] = pms.ManufacturerMedicine.ManufacturerId;
+                throw ex2;
+            }
+
+            pms.StockQuantity -= quantity;
+
+            var pm = new PrescriptionMedicine
+            {
+                PrescriptionId = prescriptionId,
+                MedicineId = medicineId,
+                Dosage = dosage,
+                PrescribedQuantity = quantity
+            };
+
+            await context.PrescriptionMedicines.AddAsync(pm);
+            prescription.PrescriptionMedicines.Add(pm);
+            medicine.PrescriptionMedicines.Add(pm);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddOrder(int id)
+        {
+            var manufacturer = await context.Manufacturers
+                .Include(x => x.Orders)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
+
+            var order = new Order
+            {
+                ManufacturerId = id
+            };
+
+            await context.Orders.AddAsync(order);
+            manufacturer.Orders.Add(order);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddOrderMedicine(int orderId, int medicineId, int quantity)
+        {
+            var order = await context.Orders
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.OrderMedicines)
+                .Include(x => x.Manufacturer)
+                .FirstOrDefaultAsync(x => x.Id == orderId) ?? throw new NonExistentEntity("Order by the given Id cannot be found, try again with valid one!");
+            var medicine = await context.Medicines
+                .Include(x => x.OrderMedicines)
+                .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            var medicineQuantity = await context.ManufacturerMedicines
+                .Where(x => x.MedicineId == medicineId && x.ManufacturerId == order.ManufacturerId)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync() ?? throw new NonExistentEntity("The manufacturer doesn't produce the desired medicine yet, try with different one!");
+
+            var manufacturerMedicine = await context.ManufacturerMedicines
+                //.Include(mm => mm.Medicine)
+                //.Include(mm => mm.Manufacturer)
+                .FirstOrDefaultAsync(mm => mm.Id == medicineQuantity);
+
+            var pm = await context.PharmacyMedicines
+                .FirstOrDefaultAsync(x => x.ManufacturerMedicineId == medicineQuantity) ?? throw new InvalidOperationException("The pharmacy currently does not offer the desired medicine, try again later!");
+
+            if (manufacturerMedicine.MadeQuantity < quantity)
+            {
+                throw new ArgumentOutOfRangeException("The manufacturer currently does not have enough quantity to satisfy the needs, try again with lower amount of later!");
+            }
+
+            pm.StockQuantity += quantity;
+            manufacturerMedicine.MadeQuantity -= quantity;
+
+            var om = new OrderMedicine
+            {
+                OrderId = orderId,
+                MedicineId = medicineId,
+                BoughtQuantity = quantity
+            };
+
+            await context.OrderMedicines.AddAsync(om);
+            order.OrderMedicines.Add(om);
+            medicine.OrderMedicines.Add(om);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task AddSale(string id)
+        {
+            var prescription = await context.Prescriptions
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
+
+            prescription.HasUsed = true;
+
+            await context.Sales.AddAsync(new Sale
+            {
+                PrescriptionId = id
+            });
+            await context.SaveChangesAsync();
+        }
+        #endregion
+
+        #region DeleteMethods
+        public async Task DeleteOrder(int id)
+        {
+            var order = await context.Orders
+              .Where(x => x.IsDeleted == false)
+              .Include(x => x.OrderMedicines)
+              .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Order by the given Id cannot be found, try again with valid one!");
+
+            order.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        #endregion
+
+
+        #region GetAll/Ids
+        public async Task<List<string>> GetAllCategories()
+        {
+            var categories = await context.Categories.ToListAsync();
+            if (categories.Count == 0)
+            {
+                throw new NonExistentEntity("There are no categories in the database, try to add some first!");
+            }
+            return categories.Select((x, i) =>
+                i == 0 ? $"-{x.CategoryName}" : x.CategoryName).ToList();
+        }
+        public async Task<int> GetCategoryId(string name)
+        {
+            var category = await context.Categories
+                .FirstOrDefaultAsync(x => x.CategoryName == name) ?? throw new NonExistentEntity("Category by the given name cannot be found, try again with valid one!");
+
+            return category.Id;
+        }
+        public async Task<List<string>> GetAllManufacturers()
+        {
+            var manufacturers = await context.Manufacturers.ToListAsync();
+            if (manufacturers.Count == 0)
+            {
+                throw new NonExistentEntity("There are no manufacturers in the database, try to add some first!");
+            }
+            return manufacturers.Select((x, i) =>
+                i == 0 ? $"-{x.ManufacturerName}" : x.ManufacturerName).ToList();
+        }
+        public async Task<int> GetManufacturerId(string name)
+        {
+            var manufacturer = await context.Manufacturers
+                .FirstOrDefaultAsync(x => x.ManufacturerName == name) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
+
+            return manufacturer.Id;
+        }
+        public async Task<string> GetManufacturerNameById(int id)
+        {
+            var manufacturer = await context.Manufacturers
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given Id cannot be found, try again with valid one!");
+            return manufacturer.ManufacturerName;
+        }
+        public async Task<List<string>> GetAllDoctors()
+        {
+            var doctors = await context.Doctors.ToListAsync();
+            if (doctors.Count == 0)
+            {
+                throw new NonExistentEntity("There are no doctors in the database, try to add some first!");
+            }
+            return doctors.Select((x, i) =>
+                i == 0 ? $"-{x.DoctorName}" : x.DoctorName).ToList();
+        }
+        public async Task<int> GetDoctorId(string name)
+        {
+            var doctor = await context.Doctors
+                .FirstOrDefaultAsync(x => x.DoctorName == name) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
+
+            return doctor.Id;
+        }
+        public async Task<List<string>> GetAllPatients()
+        {
+            var patients = await context.Patients.ToListAsync();
+            if (patients.Count == 0)
+            {
+                throw new NonExistentEntity("There are no patients in the database, try to add some first!");
+            }
+            return patients.Select((x, i) =>
+                i == 0 ? $"-{x.PatientName}" : x.PatientName).ToList();
+        }
+        public async Task<int> GetPatientId(string name)
+        {
+
+            var patient = await context.Patients
+                 .FirstOrDefaultAsync(x => x.PatientName == name) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
+
+            return patient.Id;
+        }
+        public async Task<List<string>> GetAllMedicines()
+        {
+            var medicines = await context.Medicines.ToListAsync();
+            if (medicines.Count == 0)
+            {
+                throw new NonExistentEntity("There are no medicines in the database, try to add some first!");
+            }
+            return medicines.Select((x, i) =>
+                i == 0 ? $"-{x.MedicineName}" : x.MedicineName).ToList();
+        }
+        public async Task<int> GetMedicineId(string name)
+        {
+            var medicine = await context.Medicines
+                .FirstOrDefaultAsync(x => x.MedicineName == name) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            return medicine.Id;
+        }
+        public async Task<List<string>> GetAllMedicinesByManufacturer(int manufacturerId)
+        {
+            var mms = await context.ManufacturerMedicines
+                .Where(x => x.ManufacturerId == manufacturerId)
+                .Include(x => x.Medicine)
+                .Select((x, i) => i == 0 ? $"-{x.Medicine.MedicineName} - In Stock: {x.MadeQuantity}" : $"{x.Medicine.MedicineName} - In Stock: {x.MadeQuantity}")
+                .ToListAsync();
+
+            if (mms.Count == 0)
+            {
+                throw new NonExistentEntity("This manufacturer doesn't offer any medicines.");
+            }
+
+            return mms;
+        }
+        public async Task<List<string>> GetAllMedicinesInPharmacy(string? type = null)
+        {
+            var medicines = await context.PharmacyMedicines
+                .Include(x => x.ManufacturerMedicine)
+                .ThenInclude(x => x.Medicine)
+                .ToListAsync();
+            if (medicines.Count == 0)
+            {
+                throw new NonExistentEntity("There are no medicines in the pharmacy, try to add some first!");
+            }
+
+            if (type == "dose")
+            {
+                return medicines
+                .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}")
+                .ToList();
+            }
+
+            return medicines
+                .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - In Stock: {x.StockQuantity}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - In Stock: {x.StockQuantity}")
+                .ToList();
+        }
+        public async Task<int> GetLastOrderIdForManufacturer(int manufacturerId)
+        {
+            var order = await context.Orders
+                .Where(x => x.IsDeleted == false)
+                .Where(x => x.ManufacturerId == manufacturerId)
+                .LastAsync();
+            return order.Id;
+        }
+        public async Task<List<string>> GetAllPrescriptionIds()
+        {
+            var prescriptions = await context.Prescriptions
+                .Where(x => x.HasUsed == false)
+                .ToListAsync();
+            if (prescriptions.Count == 0)
+            {
+                throw new NonExistentEntity("There are no prescriptions in the database, try to add some first!");
+            }
+            return prescriptions.Select((x, i) =>
+                i == 0 ? $"-{x.Id}" : x.Id).ToList();
+        }
+        public async Task<string> GetPrescriptionId(string id)
+        {
+            string customId = $"℞-{id}";
+            var prescription = await context.Prescriptions
+                  .FirstOrDefaultAsync(x => x.Id == customId) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
+
+            return prescription.Id;
+        }
+        public async Task<string> GetLastPrescriptionId()
+        {
+            var prescription = await context.Prescriptions
+                .OrderByDescending(x => x.PrescribedAt)
+                .FirstAsync();
+
+            return prescription.Id;
+        }
+
+        #endregion
+    }
+}
