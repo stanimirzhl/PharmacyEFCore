@@ -19,6 +19,8 @@ namespace Pharmacy.Data.Data.Models
         public string Phone { get; set; }
         [Required]
         public DateTime DateOfBirth { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
 
         public virtual ICollection<Prescription> Prescriptions { get; set; } = new HashSet<Prescription>();
 

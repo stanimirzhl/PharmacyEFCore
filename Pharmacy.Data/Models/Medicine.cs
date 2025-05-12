@@ -20,6 +20,8 @@ namespace Pharmacy.Data.Data.Models
         public virtual Category Category { get; set; }
         [Required]
         public string RecommendedDosage { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
 
         public virtual ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } = new HashSet<PrescriptionMedicine>();
         public virtual ICollection<ManufacturerMedicine> ManufacturerMedicines { get; set; } = new HashSet<ManufacturerMedicine>();

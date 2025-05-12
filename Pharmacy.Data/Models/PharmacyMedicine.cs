@@ -18,5 +18,7 @@ namespace Pharmacy.Data.Data.Models
         public int StockQuantity { get; set; }
         [Required]
         public decimal PharmacyPrice { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
     }
 }

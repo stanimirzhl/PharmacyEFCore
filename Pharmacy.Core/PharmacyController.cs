@@ -32,7 +32,7 @@ namespace Pharmacy.Core
         #region AddMethods
         public async Task AddCategory(string name, string description)
         {
-            var category = await context.Categories.FirstOrDefaultAsync(x => x.CategoryName == name);
+            var category = await context.Categories.Where(x => x.IsDeleted == false).FirstOrDefaultAsync(x => x.CategoryName == name);
             if (category != null)
             {
                 throw new ArgumentException(message);
@@ -43,7 +43,7 @@ namespace Pharmacy.Core
 
         public async Task AddManufacturer(string name, string email, string website, string phone)
         {
-            var manufacturer = await context.Manufacturers
+            var manufacturer = await context.Manufacturers.Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.ManufacturerName == name || x.Email == email || x.Website == website || x.Phone == phone);
             if (manufacturer is not null)
             {
@@ -62,7 +62,7 @@ namespace Pharmacy.Core
 
         public async Task AddDoctor(string name, string email, string phone, string specialty)
         {
-            var doctor = await context.Doctors
+            var doctor = await context.Doctors.Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.DoctorName == name || x.Email == email || x.Phone == phone);
             if (doctor is not null)
             {
@@ -81,7 +81,7 @@ namespace Pharmacy.Core
 
         public async Task AddPatient(string name, string email, string phone, DateTime birth)
         {
-            var patient = await context.Patients
+            var patient = await context.Patients.Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.PatientName == name || x.Email == email || x.Phone == phone);
             if (patient is not null)
             {
@@ -100,7 +100,7 @@ namespace Pharmacy.Core
 
         public async Task AddMedicine(string name, string description, int id, string dosage)
         {
-            var medicine = await context.Medicines.FirstOrDefaultAsync(x => x.MedicineName == name);
+            var medicine = await context.Medicines.Where(x => x.IsDeleted == false).FirstOrDefaultAsync(x => x.MedicineName == name);
             if (medicine is not null)
             {
                 throw new ArgumentException(message);
@@ -124,15 +124,15 @@ namespace Pharmacy.Core
 
         public async Task AddManufacturerMedicine(int medicineId, int manId, decimal price, int quantity)
         {
-            var mm = await context.ManufacturerMedicines.FirstOrDefaultAsync(x => x.ManufacturerId == manId && x.MedicineId == medicineId);
+            var mm = await context.ManufacturerMedicines.Where(x => x.IsDeleted == false).FirstOrDefaultAsync(x => x.ManufacturerId == manId && x.MedicineId == medicineId);
             if (mm is not null)
             {
                 throw new ArgumentException(message);
             }
-            var medicine = await context.Medicines
+            var medicine = await context.Medicines.Where(x => x.IsDeleted == false)
                 .Include(x => x.ManufacturerMedicines)
                 .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
-            var manufacturer = await context.Manufacturers
+            var manufacturer = await context.Manufacturers.Where(x => x.IsDeleted == false)
                 .Include(x => x.ManufacturerMedicines)
                 .FirstOrDefaultAsync(x => x.Id == manId) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
 
@@ -152,7 +152,7 @@ namespace Pharmacy.Core
 
         public async Task RefillManufacturerMedicineStock(int manufacturerId, int medicineId, int quantity)
         {
-            var mm = await context.ManufacturerMedicines
+            var mm = await context.ManufacturerMedicines.Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId);
 
             mm.MadeQuantity += quantity;
@@ -161,16 +161,18 @@ namespace Pharmacy.Core
 
         public async Task AddPharmacyMedicine(int manufacturerId, int medicineId, int quantity, decimal price)
         {
-            var medicine = await context.Medicines
+            var medicine = await context.Medicines.Where(x => x.IsDeleted == false)
                 .Include(x => x.PharmacyMedicines)
                .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
 
             var manufacturerMedicineId = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
                 .Where(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId)
                 .Select(x => (int?)x.Id)
                 .FirstOrDefaultAsync() ?? throw new NonExistentEntity("The manufacturer doesn't produce the desired medicine yet, try with different one!");
 
             var manufacturerMedicine = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
                 //.Include(mm => mm.Medicine)
                 //.Include(mm => mm.Manufacturer)
                 .FirstOrDefaultAsync(mm => mm.Id == manufacturerMedicineId);
@@ -186,6 +188,7 @@ namespace Pharmacy.Core
             }
 
             var existingMed = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.ManufacturerMedicineId == manufacturerMedicineId);
 
             if (existingMed is not null)
@@ -214,10 +217,10 @@ namespace Pharmacy.Core
 
         public async Task AddPrescription(int patiendId, int doctorId, DateTime prescribed)
         {
-            var patient = await context.Patients
+            var patient = await context.Patients.Where(x => x.IsDeleted == false)
                 .Include(x => x.Prescriptions)
                 .FirstOrDefaultAsync(x => x.Id == patiendId) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
-            var doctor = await context.Doctors
+            var doctor = await context.Doctors.Where(x => x.IsDeleted == false)
                 .Include(x => x.Prescriptions)
                 .FirstOrDefaultAsync(x => x.Id == doctorId) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
 
@@ -237,13 +240,14 @@ namespace Pharmacy.Core
 
         public async Task AddPrescriptionMedicine(string prescriptionId, int medicineId, string dosage, int quantity)
         {
-            var prescription = await context.Prescriptions
+            var prescription = await context.Prescriptions.Where(x => x.IsDeleted == false)
                 .Include(x => x.PrescriptionMedicines)
                 .FirstOrDefaultAsync(x => x.Id == prescriptionId) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
-            var medicine = await context.Medicines
+            var medicine = await context.Medicines.Where(x => x.IsDeleted == false)
                 .Include(x => x.PrescriptionMedicines)
                 .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
             var pms = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
                 .Where(x => x.ManufacturerMedicine.ManufacturerId == medicineId)
                 .Where(x => x.StockQuantity > 0)
                 .Include(x => x.ManufacturerMedicine)
@@ -281,7 +285,7 @@ namespace Pharmacy.Core
 
         public async Task AddOrder(int id)
         {
-            var manufacturer = await context.Manufacturers
+            var manufacturer = await context.Manufacturers.Where(x => x.IsDeleted == false)
                 .Include(x => x.Orders)
                 .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
 
@@ -303,20 +307,23 @@ namespace Pharmacy.Core
                 .Include(x => x.Manufacturer)
                 .FirstOrDefaultAsync(x => x.Id == orderId) ?? throw new NonExistentEntity("Order by the given Id cannot be found, try again with valid one!");
             var medicine = await context.Medicines
+                .Where(x => x.IsDeleted == false)
                 .Include(x => x.OrderMedicines)
                 .FirstOrDefaultAsync(x => x.Id == medicineId) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
 
-            var medicineQuantity = await context.ManufacturerMedicines
+            var medicineQuantity = await context.ManufacturerMedicines.Where(x => x.IsDeleted == false)
                 .Where(x => x.MedicineId == medicineId && x.ManufacturerId == order.ManufacturerId)
                 .Select(x => (int?)x.Id)
                 .FirstOrDefaultAsync() ?? throw new NonExistentEntity("The manufacturer doesn't produce the desired medicine yet, try with different one!");
 
             var manufacturerMedicine = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
                 //.Include(mm => mm.Medicine)
                 //.Include(mm => mm.Manufacturer)
                 .FirstOrDefaultAsync(mm => mm.Id == medicineQuantity);
 
             var pm = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.ManufacturerMedicineId == medicineQuantity) ?? throw new InvalidOperationException("The pharmacy currently does not offer the desired medicine, try again later!");
 
             if (manufacturerMedicine.MadeQuantity < quantity)
@@ -343,6 +350,7 @@ namespace Pharmacy.Core
         public async Task AddSale(string id)
         {
             var prescription = await context.Prescriptions
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
 
             prescription.HasUsed = true;
@@ -356,6 +364,88 @@ namespace Pharmacy.Core
         #endregion
 
         #region DeleteMethods
+        public async Task DeleteCategory(int id)
+        {
+            var category = await context.Categories
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.Medicines)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Category by the given name cannot be found, try again with valid one!");
+
+            category.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteManufacturer(int id)
+        {
+            var manufacturer = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
+
+            manufacturer.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteDoctor(int id)
+        {
+            var doctor = await context.Doctors
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
+
+            doctor.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeletePatient(int id)
+        {
+            var patient = await context.Patients
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
+
+            patient.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteMedicine(int id)
+        {
+            var medicine = await context.Medicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            medicine.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteManufacturerMedicine(int manufacturerId, int medicineId)
+        {
+            var mm = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId) ?? throw new NonExistentEntity("Manufacturer medicine by the given name cannot be found, try again with valid one!");
+
+            mm.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task<List<int>> CheckQuantityPharmacy(int id)
+        {
+            var medicinesInPharmacy = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.ManufacturerMedicine)
+                .ToListAsync() ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            return medicinesInPharmacy
+                .Where(x => x.ManufacturerMedicine.MedicineId == id)
+                .Where(x => x.StockQuantity == 0)
+                .Select(x => x.Id)
+                .ToList();
+        }
+        public async Task<List<int>> CheckQuantityManufacturer(int id)
+        {
+            var medicinesInManufacturer = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.Medicine)
+                .ToListAsync() ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            return medicinesInManufacturer
+                .Where(x => x.MedicineId == id)
+                .Where(x => x.MadeQuantity == 0)
+                .Select(x => )
+                .ToList();
+        }
+
         public async Task DeleteOrder(int id)
         {
             var order = await context.Orders
@@ -368,11 +458,13 @@ namespace Pharmacy.Core
         }
         #endregion
 
-
         #region GetAll/Ids
         public async Task<List<string>> GetAllCategories()
         {
-            var categories = await context.Categories.ToListAsync();
+            var categories = await context.Categories
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
             if (categories.Count == 0)
             {
                 throw new NonExistentEntity("There are no categories in the database, try to add some first!");
@@ -383,13 +475,17 @@ namespace Pharmacy.Core
         public async Task<int> GetCategoryId(string name)
         {
             var category = await context.Categories
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.CategoryName == name) ?? throw new NonExistentEntity("Category by the given name cannot be found, try again with valid one!");
 
             return category.Id;
         }
         public async Task<List<string>> GetAllManufacturers()
         {
-            var manufacturers = await context.Manufacturers.ToListAsync();
+            var manufacturers = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
             if (manufacturers.Count == 0)
             {
                 throw new NonExistentEntity("There are no manufacturers in the database, try to add some first!");
@@ -400,6 +496,7 @@ namespace Pharmacy.Core
         public async Task<int> GetManufacturerId(string name)
         {
             var manufacturer = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.ManufacturerName == name) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
 
             return manufacturer.Id;
@@ -407,12 +504,16 @@ namespace Pharmacy.Core
         public async Task<string> GetManufacturerNameById(int id)
         {
             var manufacturer = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given Id cannot be found, try again with valid one!");
             return manufacturer.ManufacturerName;
         }
         public async Task<List<string>> GetAllDoctors()
         {
-            var doctors = await context.Doctors.ToListAsync();
+            var doctors = await context.Doctors
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
             if (doctors.Count == 0)
             {
                 throw new NonExistentEntity("There are no doctors in the database, try to add some first!");
@@ -423,13 +524,17 @@ namespace Pharmacy.Core
         public async Task<int> GetDoctorId(string name)
         {
             var doctor = await context.Doctors
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.DoctorName == name) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
 
             return doctor.Id;
         }
         public async Task<List<string>> GetAllPatients()
         {
-            var patients = await context.Patients.ToListAsync();
+            var patients = await context.Patients
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
             if (patients.Count == 0)
             {
                 throw new NonExistentEntity("There are no patients in the database, try to add some first!");
@@ -441,13 +546,17 @@ namespace Pharmacy.Core
         {
 
             var patient = await context.Patients
+                 .Where(x => x.IsDeleted == false)
                  .FirstOrDefaultAsync(x => x.PatientName == name) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
 
             return patient.Id;
         }
         public async Task<List<string>> GetAllMedicines()
         {
-            var medicines = await context.Medicines.ToListAsync();
+            var medicines = await context.Medicines
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
             if (medicines.Count == 0)
             {
                 throw new NonExistentEntity("There are no medicines in the database, try to add some first!");
@@ -458,6 +567,7 @@ namespace Pharmacy.Core
         public async Task<int> GetMedicineId(string name)
         {
             var medicine = await context.Medicines
+                .Where(x => x.IsDeleted == false)
                 .FirstOrDefaultAsync(x => x.MedicineName == name) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
 
             return medicine.Id;
@@ -465,6 +575,7 @@ namespace Pharmacy.Core
         public async Task<List<string>> GetAllMedicinesByManufacturer(int manufacturerId)
         {
             var mms = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
                 .Where(x => x.ManufacturerId == manufacturerId)
                 .Include(x => x.Medicine)
                 .Select((x, i) => i == 0 ? $"-{x.Medicine.MedicineName} - In Stock: {x.MadeQuantity}" : $"{x.Medicine.MedicineName} - In Stock: {x.MadeQuantity}")
@@ -480,6 +591,7 @@ namespace Pharmacy.Core
         public async Task<List<string>> GetAllMedicinesInPharmacy(string? type = null)
         {
             var medicines = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
                 .Include(x => x.ManufacturerMedicine)
                 .ThenInclude(x => x.Medicine)
                 .ToListAsync();
@@ -510,6 +622,7 @@ namespace Pharmacy.Core
         public async Task<List<string>> GetAllPrescriptionIds()
         {
             var prescriptions = await context.Prescriptions
+                .Where(x => x.IsDeleted == false)
                 .Where(x => x.HasUsed == false)
                 .ToListAsync();
             if (prescriptions.Count == 0)
@@ -522,7 +635,7 @@ namespace Pharmacy.Core
         public async Task<string> GetPrescriptionId(string id)
         {
             string customId = $"℞-{id}";
-            var prescription = await context.Prescriptions
+            var prescription = await context.Prescriptions.Where(x => x.IsDeleted == false)
                   .FirstOrDefaultAsync(x => x.Id == customId) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
 
             return prescription.Id;
@@ -530,6 +643,7 @@ namespace Pharmacy.Core
         public async Task<string> GetLastPrescriptionId()
         {
             var prescription = await context.Prescriptions
+                .Where(x => x.IsDeleted == false)
                 .OrderByDescending(x => x.PrescribedAt)
                 .FirstAsync();
 

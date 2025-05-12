@@ -21,6 +21,8 @@ namespace Pharmacy.Data.Data.Models
         public DateTime PrescribedAt { get; set; }
         [Required]
         public bool HasUsed { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
 
         public virtual ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; } = new HashSet<PrescriptionMedicine>();
 

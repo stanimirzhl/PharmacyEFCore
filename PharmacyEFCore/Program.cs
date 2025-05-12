@@ -22,6 +22,7 @@ while (true)
     switch (choice)
     {
         case 1:
+            #region AddToTables
             string[] tables = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
             Console.WriteLine($"Choose table to add: {string.Join(", ", tables)}");
             string table = Console.ReadLine();
@@ -474,6 +475,108 @@ while (true)
                         string random = Console.ReadLine();
                         string prescriptionId = await controller.GetPrescriptionId(random);
                         await controller.AddSale(prescriptionId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Seems like you didn't pay enough attention, try again next time with valid table name..");
+                    break;
+            }
+            #endregion
+            break;
+        case 2:
+            string[] tables2 = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
+            Console.WriteLine($"Choose a table to remove data from: {string.Join(", ", tables2)}");
+            string table2 = Console.ReadLine();
+            switch (table2)
+            {
+                //TODO: remove pharmacy medicine and manufacturer medicine
+                case "categories":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all categories: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllCategories())}");
+                        Console.Write("Category to remove: ");
+                        string category = Console.ReadLine();
+                        int categoryId = await controller.GetCategoryId(category);
+                        await controller.DeleteCategory(categoryId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "manufacturers":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all categories: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllManufacturers())}");
+                        Console.Write("Category to remove: ");
+                        string manufacturer = Console.ReadLine();
+                        int manufacturerId = await controller.GetCategoryId(manufacturer);
+                        await controller.DeleteManufacturer(manufacturerId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "doctors":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all doctors: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllDoctors())}");
+                        Console.Write("Doctor to remove: ");
+                        string doctor = Console.ReadLine();
+                        int doctorId = await controller.GetDoctorId(doctor);
+                        await controller.DeleteDoctor(doctorId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "patients":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all patients: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllPatients())}");
+                        Console.Write("Patient to remove: ");
+                        string patient = Console.ReadLine();
+                        int patientId = await controller.GetPatientId(patient);
+                        await controller.DeletePatient(patientId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "medicines":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all medicines: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicines())}");
+                        Console.Write("Medicine to remove: ");
+                        string medicine = Console.ReadLine();
+                        int medicineId = await controller.GetPatientId(medicine);
+                        await controller.DeleteMedicine(medicineId);
+
+                    }
+                    catch(Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "manufacturer medicine":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all manufacturers: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllManufacturers())}");
+                        Console.Write("Manufacturer: ");
+                        string manufacturer = Console.ReadLine();
+                        int manufacturerId = await controller.GetPatientId(manufacturer);
+                        Console.WriteLine($"Here is a list of all medicines produced by {manufacturer}: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicinesByManufacturer(manufacturerId))}");
+                        Console.Write("Medicine to remove: ");
+                        string medicine = Console.ReadLine();
+                        int medicineId = await controller.GetMedicineId(medicine);
+                        await controller.DeleteManufacturerMedicine(manufacturerId, medicineId);
                     }
                     catch (Exception ex)
                     {

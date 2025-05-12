@@ -14,6 +14,8 @@ namespace Pharmacy.Data.Data.Models
         [Required]
         public string PrescriptionId { get; set; }
         public virtual Prescription Prescription { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
 
         public DateTime SaleDate { get; set; }
 

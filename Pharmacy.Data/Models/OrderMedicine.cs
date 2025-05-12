@@ -19,5 +19,7 @@ namespace Pharmacy.Data.Data.Models
         public virtual Medicine Medicine { get; set; }
         [Required]
         public int BoughtQuantity { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
     }
 }

@@ -21,5 +21,7 @@ namespace Pharmacy.Data.Data.Models
         public string Dosage { get; set; }
         [Required]
         public int PrescribedQuantity { get; set; }
+        [Required]
+        public bool IsDeleted { get; set; }
     }
 }
