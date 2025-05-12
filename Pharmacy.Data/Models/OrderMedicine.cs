@@ -12,7 +12,7 @@ namespace Pharmacy.Data.Data.Models
         [Key]
         public int Id { get; set; }
         [Required]
-        public int OrderId { get; set; }
+        public string OrderId { get; set; }
         public virtual Order Order { get; set; }
         [Required]
         public int MedicineId { get; set; }

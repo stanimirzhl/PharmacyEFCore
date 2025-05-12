@@ -230,7 +230,7 @@ while (true)
                             break;
                         }
                         await controller.AddOrder(manufacturerId2);
-                        int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
+                        string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
                         await controller.AddOrderMedicine(orderId, medicineId2, quantity2);
                         await controller.AddPharmacyMedicine(manufacturerId2, medicineId2, quantity2, price);
                     }
@@ -245,14 +245,14 @@ while (true)
                             {
                                 quantity2 = quantity2 < 100 ? quantity2 = 100 : quantity2;
                                 await controller.AddOrder(manufacturerId2);
-                                int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
+                                string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
                                 await controller.AddOrderMedicine(orderId, medicineId2, quantity2);
                                 Console.WriteLine("Order successfully placed!");
                             }
                             catch (Exception inexistant)
                             {
                                 Console.WriteLine(inexistant.Message);
-                                int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
+                                string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId2);
                                 await controller.DeleteOrder(orderId);
                             }
                         }
@@ -284,10 +284,9 @@ while (true)
                             Console.WriteLine("Wrong format, coorect one is yyyy-MM-dd, try again!");
                             break;
                         }
-                        await controller.AddPrescription(doctorId, patientId, date);
-                        string prescriptionId = await controller.GetLastPrescriptionId();
                         Console.WriteLine($"Write the name of the medicines {patient} is getting prescribed, here is a list of all medicines in the pharmacy to help you: " + "\n" + $"{string.Join(Environment.NewLine + "-", pharmacyMedicines)}");
                         Console.WriteLine("Write medicine name, quantity and dosage for the patient until the word 'That's all', write them on one line separated by line a dash (e.g., example-example), Dont forget the format for dosage is number + mg e.g. 100mg");
+                        string prescriptionId = null;
                         while (true)
                         {
                             string medicine = Console.ReadLine();
@@ -322,6 +321,11 @@ while (true)
                                     Console.WriteLine("Dosage wasn't in the correct format, try again with this one (number + mg, e.g. 100mg)!");
                                     continue;
                                 }
+                                if (prescriptionId == null)
+                                {
+                                    await controller.AddPrescription(doctorId, patientId, date);
+                                    prescriptionId = await controller.GetLastPrescriptionId();
+                                }
                                 await controller.AddPrescriptionMedicine(prescriptionId, medicineIdToParse, dosage, quantityToParse);
                             }
                             catch (ArgumentNullException ex)
@@ -337,14 +341,14 @@ while (true)
                                     {
                                         quantityToParse = quantityToParse < 100 ? quantityToParse = 100 : quantityToParse;
                                         await controller.AddOrder(manufacturerId);
-                                        int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
+                                        string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
                                         await controller.AddOrderMedicine(orderId, medicineIdToParse, quantityToParse);
                                         Console.WriteLine("Order successfully placed!");
                                     }
                                     catch (Exception inexistant)
                                     {
                                         Console.WriteLine(inexistant.Message);
-                                        int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
+                                        string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
                                         await controller.DeleteOrder(orderId);
                                     }
                                 }
@@ -362,18 +366,26 @@ while (true)
                                     {
                                         quantityToParse = quantityToParse < 100 ? quantityToParse = 100 : quantityToParse;
                                         await controller.AddOrder(manufacturerId);
-                                        int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
+                                        string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
                                         await controller.AddOrderMedicine(orderId, medicineIdToParse, quantityToParse);
                                         Console.WriteLine("Order successfully placed!");
                                     }
                                     catch (Exception inexistant)
                                     {
                                         Console.WriteLine(inexistant.Message);
-                                        int orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
+                                        string orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
                                         await controller.DeleteOrder(orderId);
                                     }
                                 }
                             }
+                        }
+                        if (prescriptionId == null)
+                        {
+                            Console.WriteLine("No items found, prescription terminated!");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Prescription successfully placed!");
                         }
                     }
                     catch (Exception ex)
@@ -393,7 +405,7 @@ while (true)
                         allMedicinesByManufacturer = await controller.GetAllMedicinesByManufacturer(manufacturerId);
                         Console.WriteLine($"Here is a list of all medicines produced by and their current instock availability {manufacturer}: " + "\n" + $"{string.Join(Environment.NewLine + "-", allMedicinesByManufacturer)}");
                         Console.WriteLine("Write medicine name and quantity you wish to order separated by slash e.g. MedicineName-Quantity, until the word 'Order'");
-                        int orderId = 0;
+                        string orderId = null;
                         while (true)
                         {
                             string command = Console.ReadLine();
@@ -424,7 +436,7 @@ while (true)
                                     Console.WriteLine("Quantity must be greater than 0, try again!");
                                     continue;
                                 }
-                                if (orderId == 0)
+                                if (orderId == null)
                                 {
                                     await controller.AddOrder(manufacturerId);
                                     orderId = await controller.GetLastOrderIdForManufacturer(manufacturerId);
@@ -453,7 +465,7 @@ while (true)
                                 Console.WriteLine(ex.Message);
                             }
                         }
-                        if (orderId == 0)
+                        if (orderId == null)
                         {
                             Console.WriteLine("No items were found, order wasn't sent.");
                         }
@@ -488,12 +500,12 @@ while (true)
             #endregion
             break;
         case 2:
+            #region DeleteDataFromTables
             string[] tables2 = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
             Console.WriteLine($"Choose a table to remove data from: {string.Join(", ", tables2)}");
             string table2 = Console.ReadLine();
             switch (table2)
             {
-                //TODO: remove pharmacy medicine and manufacturer medicine
                 case "categories":
                     try
                     {
@@ -558,9 +570,16 @@ while (true)
                         string medicine = Console.ReadLine();
                         int medicineId = await controller.GetPatientId(medicine);
                         await controller.DeleteMedicine(medicineId);
-
+                        foreach (var id in await controller.CheckQuantityManufacturer(medicineId))
+                        {
+                            await controller.DeleteManufacturerMedicine(id, medicineId);
+                        }
+                        foreach (var id in await controller.CheckQuantityPharmacy(medicineId))
+                        {
+                            await controller.DeletePharmacyMedicine(id, medicineId);
+                        }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Console.WriteLine(ex.Message);
                     }
@@ -583,10 +602,68 @@ while (true)
                         Console.WriteLine(ex.Message);
                     }
                     break;
+                case "pharmacy medicine":
+                    try
+                    {
+                        Console.WriteLine("Here is a list with all medicines and their manufacturers currently available in the pharmacy: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicinesInPharmacy("manufacturer"))}");
+                        Console.Write("Medicine and it's manufacturer to remove, (e.g. MedicineName-ManufacturerName): ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length != 2)
+                        {
+                            Console.WriteLine("Something is missing, try again.");
+                            break;
+                        }
+                        int manufacturerId = await controller.GetManufacturerId(strings[1]);
+                        int medicineId = await controller.GetMedicineId(strings[0]);
+                        await controller.DeletePharmacyMedicine(manufacturerId, medicineId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "prescriptions":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all prescriptions: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllPrescriptionIds())}");
+                        Console.Write("Prescription to remove: ");
+                        string prescription = Console.ReadLine();
+                        string prescriptionId = await controller.GetPrescriptionId(prescription);
+                        await controller.DeletePrescription(prescriptionId);
+                        var (lastPrescriptionId, medicineCollection) = await controller.GetLastDeletedPrescriptionIdAndCollection();
+
+                        medicineCollection.ForEach(async x => await controller.DeletePrescriptionMedicine(lastPrescriptionId));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "orders":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all orders: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllOrders())}");
+                        Console.Write("Order to remove, write the Id in the following format e.g. Date-Random: ");
+                        string order = Console.ReadLine();
+                        string orderId = await controller.GetOrderId(order);
+                        await controller.DeleteOrder(orderId);
+                        var (lastOrderId, orderMedicines) = await controller.GetLastDeletedOrderIdAndCollection();
+
+                        orderMedicines.ForEach(async x => await controller.DeleteOrderMedicine(lastOrderId));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "sales":
+                    Console.WriteLine("Sorry but any data from the sales table is not available for edit or deletion");
+                    break;
                 default:
                     Console.WriteLine("Seems like you didn't pay enough attention, try again next time with valid table name..");
                     break;
             }
+            #endregion
             break;
         case 0:
             Console.WriteLine("Exiting the program...");

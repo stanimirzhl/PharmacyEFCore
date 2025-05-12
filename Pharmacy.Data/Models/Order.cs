@@ -10,7 +10,7 @@ namespace Pharmacy.Data.Data.Models
     public class Order
     {
         [Key]
-        public int Id { get; set; }
+        public string Id { get; set; }
         [Required]
         public DateTime OrderDate { get; set; }
         [Required]
@@ -18,6 +18,8 @@ namespace Pharmacy.Data.Data.Models
         public virtual Manufacturer Manufacturer { get; set; }
         [Required]
         public bool IsDeleted { get; set; }
+
+        public DateTime? DeletedAt { get; set; }
 
         public virtual ICollection<OrderMedicine> OrderMedicines { get; set; } = new HashSet<OrderMedicine>();
 

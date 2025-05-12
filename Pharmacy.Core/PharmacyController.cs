@@ -14,11 +14,17 @@ namespace Pharmacy.Core
             {
             }
         }
-        private string IdGenerator()
+        private string PrescriptionIdGenerator()
         {
             string date = DateTime.Now.ToString("dd/MM/yyyy");
             string random = Guid.NewGuid().ToString("N")[..6].ToUpper();
             return $"℞-{random}-{date}";
+        }
+        private string OrderIdGenerator()
+        {
+            string date = DateTime.Now.ToString("dd/MM/yyyy");
+            string random = Guid.NewGuid().ToString("N")[..6].ToUpper();
+            return $"ORD-{date}-{random}";
         }
         PharmacyDbContext context;
 
@@ -226,7 +232,7 @@ namespace Pharmacy.Core
 
             var prescription = new Prescription
             {
-                Id = IdGenerator(),
+                Id = PrescriptionIdGenerator(),
                 PatientId = patiendId,
                 DoctorId = doctorId,
                 PrescribedAt = prescribed
@@ -291,6 +297,7 @@ namespace Pharmacy.Core
 
             var order = new Order
             {
+                Id = OrderIdGenerator(),
                 ManufacturerId = id
             };
 
@@ -299,7 +306,7 @@ namespace Pharmacy.Core
             await context.SaveChangesAsync();
         }
 
-        public async Task AddOrderMedicine(int orderId, int medicineId, int quantity)
+        public async Task AddOrderMedicine(string orderId, int medicineId, int quantity)
         {
             var order = await context.Orders
                 .Where(x => x.IsDeleted == false)
@@ -419,6 +426,16 @@ namespace Pharmacy.Core
             mm.IsDeleted = true;
             await context.SaveChangesAsync();
         }
+        public async Task DeletePharmacyMedicine(int manufacturerId, int medicineId)
+        {
+            var pm = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.ManufacturerMedicine)
+                .FirstOrDefaultAsync(x => x.ManufacturerMedicine.ManufacturerId == manufacturerId && x.ManufacturerMedicine.MedicineId == medicineId) ?? throw new NonExistentEntity("Pharmacy medicine by the given medicine cannot be found, try again with valid one!");
+
+            pm.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
         public async Task<List<int>> CheckQuantityPharmacy(int id)
         {
             var medicinesInPharmacy = await context.PharmacyMedicines
@@ -429,7 +446,7 @@ namespace Pharmacy.Core
             return medicinesInPharmacy
                 .Where(x => x.ManufacturerMedicine.MedicineId == id)
                 .Where(x => x.StockQuantity == 0)
-                .Select(x => x.Id)
+                .Select(x => x.ManufacturerMedicine.ManufacturerId)
                 .ToList();
         }
         public async Task<List<int>> CheckQuantityManufacturer(int id)
@@ -442,11 +459,29 @@ namespace Pharmacy.Core
             return medicinesInManufacturer
                 .Where(x => x.MedicineId == id)
                 .Where(x => x.MadeQuantity == 0)
-                .Select(x => )
+                .Select(x => x.Id)
                 .ToList();
         }
+        public async Task DeletePrescription(string id)
+        {
+            var prescription = await context.Prescriptions
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
 
-        public async Task DeleteOrder(int id)
+            prescription.IsDeleted = true;
+            prescription.DeletedAt = DateTime.Now;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeletePrescriptionMedicine(string id)
+        {
+            var pm = await context.PrescriptionMedicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.PrescriptionId == id) ?? throw new NonExistentEntity("Prescription medicine by the given Id cannot be found, try again with valid one!");
+
+            pm.IsDeleted = true;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteOrder(string id)
         {
             var order = await context.Orders
               .Where(x => x.IsDeleted == false)
@@ -454,6 +489,16 @@ namespace Pharmacy.Core
               .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Order by the given Id cannot be found, try again with valid one!");
 
             order.IsDeleted = true;
+            order.DeletedAt = DateTime.Now;
+            await context.SaveChangesAsync();
+        }
+        public async Task DeleteOrderMedicine(string id)
+        {
+            var om = await context.OrderMedicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.OrderId == id) ?? throw new NonExistentEntity("Order medicine by the given Id cannot be found, try again with valid one!");
+
+            om.IsDeleted = true;
             await context.SaveChangesAsync();
         }
         #endregion
@@ -606,18 +651,40 @@ namespace Pharmacy.Core
                 .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}")
                 .ToList();
             }
+            if(type == "manufacturer")
+            {
+                return medicines
+                    .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - Manufacturer: {x.ManufacturerMedicine.Manufacturer.ManufacturerName}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - Manufacturer: {x.ManufacturerMedicine.Manufacturer.ManufacturerName}")
+                    .ToList();
+            }
 
             return medicines
                 .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - In Stock: {x.StockQuantity}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - In Stock: {x.StockQuantity}")
                 .ToList();
         }
-        public async Task<int> GetLastOrderIdForManufacturer(int manufacturerId)
+        public async Task<string> GetLastOrderIdForManufacturer(int manufacturerId)
         {
             var order = await context.Orders
                 .Where(x => x.IsDeleted == false)
                 .Where(x => x.ManufacturerId == manufacturerId)
                 .LastAsync();
             return order.Id;
+        }
+        public async Task<List<string>> GetAllOrders()
+        {
+            var orders = await context.Orders
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.OrderMedicines)
+                .ThenInclude(x => x.Medicine)
+                .ToListAsync();
+            if (orders.Count == 0)
+            {
+                throw new NonExistentEntity("There are no orders in the database, try to add some first!");
+            }
+            return orders.Select((x, i) =>
+                i == 0 ? $"-{x.Id}-Items: {x.OrderMedicines.Select(om => $"{om.Medicine.MedicineName}" + "\n")}"
+                 : $"{x.Id}-Items: {x.OrderMedicines.Select(om => $"{om.Medicine.MedicineName}" + "\n")}")
+                .ToList();
         }
         public async Task<List<string>> GetAllPrescriptionIds()
         {
@@ -632,6 +699,26 @@ namespace Pharmacy.Core
             return prescriptions.Select((x, i) =>
                 i == 0 ? $"-{x.Id}" : x.Id).ToList();
         }
+        public async Task<(string, List<PrescriptionMedicine>)> GetLastDeletedPrescriptionIdAndCollection()
+        {
+           var prescription = await context.Prescriptions
+                .Where(p => p.IsDeleted && p.DeletedAt != null)
+                .Include(x => x.PrescriptionMedicines)
+                .OrderByDescending(p => p.DeletedAt)
+                .FirstOrDefaultAsync();
+
+            return (prescription.Id, prescription.PrescriptionMedicines.ToList());
+        }
+        public async Task<(string, List<OrderMedicine>)> GetLastDeletedOrderIdAndCollection()
+        {
+            var order = await context.Orders
+                 .Where(p => p.IsDeleted && p.DeletedAt != null)
+                 .Include(x => x.OrderMedicines)
+                 .OrderByDescending(p => p.DeletedAt)
+                 .FirstOrDefaultAsync();
+
+            return (order.Id, order.OrderMedicines.ToList());
+        }
         public async Task<string> GetPrescriptionId(string id)
         {
             string customId = $"℞-{id}";
@@ -639,6 +726,14 @@ namespace Pharmacy.Core
                   .FirstOrDefaultAsync(x => x.Id == customId) ?? throw new NonExistentEntity("Prescription by the given Id cannot be found, try again with valid one!");
 
             return prescription.Id;
+        }
+        public async Task<string> GetOrderId(string id)
+        {
+            string customId = $"ORD-{id}";
+            var order = await context.Orders.Where(x => x.IsDeleted == false)
+                  .FirstOrDefaultAsync(x => x.Id == customId) ?? throw new NonExistentEntity("Order by the given Id cannot be found, try again with valid one!");
+
+            return order.Id;
         }
         public async Task<string> GetLastPrescriptionId()
         {
