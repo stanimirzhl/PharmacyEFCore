@@ -503,6 +503,130 @@ namespace Pharmacy.Core
         }
         #endregion
 
+        #region UpdateMethods
+        public async Task UpdateCategory(int id, string[] strings)
+        {
+            var category = await context.Categories
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Category by the given name cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                category.CategoryName = strings[0];
+            }
+            if (strings[1] != null)
+            {
+                category.CategoryDescription = strings[1];
+            }
+
+            await context.SaveChangesAsync();
+        }
+        public async Task UpdateManufacturer(int id, string[] strings)
+        {
+            var manufacturer = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Manufacturer by the given name cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                manufacturer.ManufacturerName = strings[0];
+            }
+            if (strings[1] != null)
+            {
+                manufacturer.Email = strings[1];
+            }
+            if (strings[2] != null)
+            {
+                manufacturer.Phone = strings[2];
+            }
+            if (strings[3] != null)
+            {
+                manufacturer.Website = strings[3];
+            }
+
+            await context.SaveChangesAsync();
+        }
+        public async Task UpdateDoctor(int id, string[] strings)
+        {
+            var doctor = await context.Doctors
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Doctor by the given name cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                doctor.DoctorName = strings[0];
+            }
+            if (strings[1] != null)
+            {
+                doctor.Email = strings[1];
+            }
+            if (strings[2] != null)
+            {
+                doctor.Phone = strings[2];
+            }
+            if (strings[3] != null)
+            {
+                doctor.Specialty = strings[3];
+            }
+
+            await context.SaveChangesAsync();
+        }
+        public async Task UpdatePatient(int id, string[] strings)
+        {
+            var patient = await context.Patients
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                patient.PatientName = strings[0];
+            }
+            if (strings[1] != null)
+            {
+                patient.Email = strings[1];
+            }
+            if (strings[2] != null)
+            {
+                patient.Phone = strings[2];
+            }
+            if (strings[3] != null)
+            {
+                patient.DateOfBirth = DateTime.Parse(strings[3]);
+            }
+
+            await context.SaveChangesAsync();
+        }
+        public async Task UpdateMedicine(int id, string[] strings)
+        {
+            var medicine = await context.Medicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Medicine by the given name cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                medicine.MedicineName = strings[0];
+            }
+            if (strings[1] != null)
+            {
+                medicine.Description = strings[1];
+            }
+            if (strings[2] != null)
+            {
+                medicine.RecommendedDosage = strings[2];
+            }
+            if (strings[3] != null)
+            {
+                medicine.CategoryId = int.Parse(strings[3]);
+            }
+
+            await context.SaveChangesAsync();
+        }
+        public async Task UpdateManufacturerMedicine(int mm, string[] strings)
+        {
+
+        }
+        #endregion
+
         #region GetAll/Ids
         public async Task<List<string>> GetAllCategories()
         {

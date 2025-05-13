@@ -665,6 +665,155 @@ while (true)
             }
             #endregion
             break;
+        case 3:
+            string[] tables3 = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
+            Console.WriteLine($"Choose a table to remove data from: {string.Join(", ", tables3)}");
+            string table3 = Console.ReadLine();
+            switch (table3)
+            {
+                case "categories":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all categories: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllCategories())}");
+                        Console.Write("Category to update: ");
+                        string category = Console.ReadLine();
+                        int categoryId = await controller.GetCategoryId(category);
+                        Console.Write("Write the new information in the format Name-Description, e.g. PainKillers-They are for pain aches: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 2)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        await controller.UpdateCategory(categoryId, strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "manufacturers":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all manufacturers: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllManufacturers())}");
+                        Console.Write("Manufacturer to update: ");
+                        string manufacturer = Console.ReadLine();
+                        int manufacturerId = await controller.GetManufacturerId(manufacturer);
+                        Console.Write("Write the new information in the format Name-Email-Website-Phone, e.g. Bayer-bayer@bmail.com-bayer.com-+73729472: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 4)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        await controller.UpdateManufacturer(manufacturerId, strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "doctors":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all doctors: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllDoctors())}");
+                        Console.Write("Manufacturer to update: ");
+                        string doctor = Console.ReadLine();
+                        int doctorId = await controller.GetDoctorId(doctor);
+                        Console.Write("Write the new information in the format Name-Email-Phone-Specialty, e.g. Dr. Smith-smith.@email.com-+73729472-Specializes in working with animals: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 4)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        await controller.UpdateManufacturer(doctorId, strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "patients":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all patients: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllPatients())}");
+                        Console.Write("Patient to update: ");
+                        string patient = Console.ReadLine();
+                        int patientId = await controller.GetPatientId(patient);
+                        Console.Write("Write the new information in the format Name-Email-Phone-Date Of Birth, e.g. Bauman-bauman234@gmail.com-+73729472-11/09/2001: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 4)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        if (!DateTime.TryParseExact(strings[3], "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+                        {
+                            Console.WriteLine("Birth date wasn't in the correct format, try again with dd/MM/yyyy!");
+                            break;
+                        }
+                        await controller.UpdatePatient(patientId, strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "medicines":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all medicines: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicines())}");
+                        Console.WriteLine($"Here is a list of all categories: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllCategories())}");
+                        Console.Write("Medicine to update: ");
+                        string medicine = Console.ReadLine();
+                        int medicineId = await controller.GetMedicineId(medicine);
+                        Console.Write("Write the new information in the format Name-Description-Dosage-CategoryName, e.g. Ibuprofen-They are for pain aches-100mg-Painkillers: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 4)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        int categoryId = await controller.GetCategoryId(strings[3]);
+
+                        await controller.UpdateMedicine(medicineId, strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Seems like you didn't pay enough attention, try again next time with valid table name..");
+                    break;
+            }
+            break;
         case 0:
             Console.WriteLine("Exiting the program...");
             return;
