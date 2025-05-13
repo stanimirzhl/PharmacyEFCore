@@ -43,7 +43,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Doctor", b =>
@@ -75,7 +75,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Doctors");
+                    b.ToTable("Doctors", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Manufacturer", b =>
@@ -107,7 +107,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Manufacturers");
+                    b.ToTable("Manufacturers", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.ManufacturerMedicine", b =>
@@ -139,7 +139,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("MedicineId");
 
-                    b.ToTable("ManufacturerMedicines");
+                    b.ToTable("ManufacturerMedicines", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Medicine", b =>
@@ -172,7 +172,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Medicines");
+                    b.ToTable("Medicines", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Order", b =>
@@ -199,7 +199,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("ManufacturerId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.OrderMedicine", b =>
@@ -228,7 +228,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("OrderMedicines");
+                    b.ToTable("OrderMedicines", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Patient", b =>
@@ -259,7 +259,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Patients");
+                    b.ToTable("Patients", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.PharmacyMedicine", b =>
@@ -291,7 +291,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("MedicineId");
 
-                    b.ToTable("PharmacyMedicines");
+                    b.ToTable("PharmacyMedicines", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Prescription", b =>
@@ -323,7 +323,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Prescriptions");
+                    b.ToTable("Prescriptions", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.PrescriptionMedicine", b =>
@@ -357,7 +357,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("PrescriptionId");
 
-                    b.ToTable("PrescriptionMedicines");
+                    b.ToTable("PrescriptionMedicines", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.Sale", b =>
@@ -382,7 +382,7 @@ namespace Pharmacy.Data.Migrations
 
                     b.HasIndex("PrescriptionId");
 
-                    b.ToTable("Sales");
+                    b.ToTable("Sales", (string)null);
                 });
 
             modelBuilder.Entity("Pharmacy.Data.Data.Models.ManufacturerMedicine", b =>

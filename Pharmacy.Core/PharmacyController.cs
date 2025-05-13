@@ -621,9 +621,25 @@ namespace Pharmacy.Core
 
             await context.SaveChangesAsync();
         }
-        public async Task UpdateManufacturerMedicine(int mm, string[] strings)
+        public async Task UpdateManufacturerMedicine(string[] strings)
         {
+            int manufacturerId = int.Parse(strings[3]);
+            int medicineId = int.Parse(strings[4]);
 
+            var mm = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
+                .FirstOrDefaultAsync(x => x.ManufacturerId == manufacturerId && x.MedicineId == medicineId) ?? throw new NonExistentEntity("Manufacturer medicine cannot be found, try again with valid one!");
+
+            if (strings[0] != null)
+            {
+                mm.ManufacturerPrice = decimal.Parse(strings[0]);
+            }
+            if(strings[1] != null)
+            {
+                mm.MadeQuantity = int.Parse(strings[1]);
+            }
+
+            await context.SaveChangesAsync();
         }
         #endregion
 
@@ -867,6 +883,70 @@ namespace Pharmacy.Core
                 .FirstAsync();
 
             return prescription.Id;
+        }
+
+        #endregion
+
+        #region GetAllData
+        public async Task<List<Category>> GetAllCategoriesData()
+        {
+            var categories = await context.Categories
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
+            if (categories.Count == 0)
+            {
+                throw new NonExistentEntity("There are no categories in the database, try to add some first!");
+            }
+            return categories;
+        }
+        public async Task<List<Manufacturer>> GetAllManufacturersData()
+        {
+            var manufacturers = await context.Manufacturers
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
+            if (manufacturers.Count == 0)
+            {
+                throw new NonExistentEntity("There are no manufacturers in the database, try to add some first!");
+            }
+            return manufacturers;
+        }
+        public async Task<List<Doctor>> GetAllDoctorsData()
+        {
+            var doctors = await context.Doctors
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
+            if (doctors.Count == 0)
+            {
+                throw new NonExistentEntity("There are no doctors in the database, try to add some first!");
+            }
+            return doctors;
+        }
+        public async Task<List<Patient>> GetAllPatientsData()
+        {
+            var patients = await context.Patients
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
+            if (patients.Count == 0)
+            {
+                throw new NonExistentEntity("There are no patients in the database, try to add some first!");
+            }
+            return patients;
+        }
+        public async Task<List<Medicine>> GetAllMedicinesData()
+        {
+            var medicines = await context.Medicines
+                .Where(x => x.IsDeleted == false)
+                .ToListAsync();
+
+            if (medicines.Count == 0)
+            {
+                throw new NonExistentEntity("There are no medicines in the database, try to add some first!");
+            }
+            return medicines;
         }
 
         #endregion

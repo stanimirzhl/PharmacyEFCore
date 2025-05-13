@@ -666,8 +666,9 @@ while (true)
             #endregion
             break;
         case 3:
+            #region UpdateDataInTables
             string[] tables3 = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
-            Console.WriteLine($"Choose a table to remove data from: {string.Join(", ", tables3)}");
+            Console.WriteLine($"Choose a table to update data from: {string.Join(", ", tables3)}");
             string table3 = Console.ReadLine();
             switch (table3)
             {
@@ -800,6 +801,11 @@ while (true)
                             Console.WriteLine("Nothing has been updated!");
                             break;
                         }
+                        if (!Regex.IsMatch(strings[2], @"^\d+mg$"))
+                        {
+                            Console.WriteLine("Dosage wasn't in the correct format, try again with this one e.g. 100mg!");
+                            break;
+                        }
                         int categoryId = await controller.GetCategoryId(strings[3]);
 
                         await controller.UpdateMedicine(medicineId, strings);
@@ -809,10 +815,123 @@ while (true)
                         Console.WriteLine(ex.Message);
                     }
                     break;
+                case "manufacturer medicine":
+                    try
+                    {
+                        Console.WriteLine($"Here is a list of all manufacturers: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllManufacturers())}");
+                        Console.Write("Manufacturer whose medicine is going to be updated: ");
+                        string manufacturer = Console.ReadLine();
+                        int manufacturerId = await controller.GetManufacturerId(manufacturer);
+                        Console.WriteLine($"Here is a list of all medicines produced by {manufacturer}: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicinesByManufacturer(manufacturerId))}");
+                        Console.Write("Medicine to update: ");
+                        string medicine = Console.ReadLine();
+                        int medicineId = await controller.GetMedicineId(medicine);
+                        Console.Write("Write the new information in the format Price-Quantity, e.g. 10.99-100: ");
+                        string[] strings = Console.ReadLine().Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (strings.Length > 2)
+                        {
+                            Console.WriteLine("There is a additional data, please keep the format so try again!");
+                            break;
+                        }
+                        if (strings.Length == 0)
+                        {
+                            Console.WriteLine("Nothing has been updated!");
+                            break;
+                        }
+                        if (!decimal.TryParse(strings[0], out decimal price))
+                        {
+                            Console.WriteLine("Price wasn't in the correct format, try again with a number!");
+                            break;
+                        }
+                        if (price <= 0)
+                        {
+                            Console.WriteLine("You cannot sell medicines for free, please provide valid price!");
+                            break;
+                        }
+                        if (!int.TryParse(strings[1], out int quantity))
+                        {
+                            Console.WriteLine("Quantity wasn't in the correct format, try again with a number!");
+                            break;
+                        }
+                        if (quantity <= 0)
+                        {
+                            Console.WriteLine("Quantity must be greater than 0, try again!");
+                            break;
+                        }
+                        strings[3] = manufacturerId.ToString();
+                        strings[4] = medicineId.ToString();
+
+                        await controller.UpdateManufacturerMedicine(strings);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "pharmacy medicine":
+                case "prescriptions":
+                case "orders":
+                case "sales":
+                    Console.WriteLine("Sorry but any data from this table is not available for edit or deletion");
+                    break;
                 default:
                     Console.WriteLine("Seems like you didn't pay enough attention, try again next time with valid table name..");
                     break;
             }
+            #endregion
+            break;
+        case 4:
+            #region GetDataFromTables
+            string[] tables4 = { "categories", "manufacturers", "doctors", "patients", "medicines", "manufacturer medicine", "pharmacy medicine", "prescriptions", "orders", "sales" };
+            Console.WriteLine($"Choose a table to get data from: {string.Join(", ", tables4)}");
+            string table4 = Console.ReadLine();
+            switch (table4)
+            {
+                case "categories":
+                    try
+                    {
+                        Console.WriteLine("\nCategories List:");
+                        Console.WriteLine(new string('-', 20 + 35));
+                        Console.WriteLine("| {0,-20} | {1,-35} |", "Category Name", "Description");
+                        Console.WriteLine(new string('-', 20 + 35));
+
+                        foreach (var category in await controller.GetAllCategoriesData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-35} |", category.CategoryName, category.CategoryDescription);
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 35));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "manufacturers":
+                    try
+                    {
+                        Console.WriteLine("\nManufacturers List:");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                        Console.WriteLine("| {0,-20} | {1,-35} | {2,-25} | {3, -15} |", "Manufacturer Name", "Website", "Email", "Phone");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+
+                        foreach (var manufacturer in await controller.GetAllManufacturersData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-35} | {2,-25} | {3, -15} |",manufacturer.ManufacturerName, manufacturer.Website, manufacturer.Email, manufacturer.Phone);
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Invalid table, try again!");
+                    break;
+            }
+            #endregion
             break;
         case 0:
             Console.WriteLine("Exiting the program...");
