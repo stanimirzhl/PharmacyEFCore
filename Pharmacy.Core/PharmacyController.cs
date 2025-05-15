@@ -634,7 +634,7 @@ namespace Pharmacy.Core
             {
                 mm.ManufacturerPrice = decimal.Parse(strings[0]);
             }
-            if(strings[1] != null)
+            if (strings[1] != null)
             {
                 mm.MadeQuantity = int.Parse(strings[1]);
             }
@@ -791,7 +791,7 @@ namespace Pharmacy.Core
                 .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - Recommended dose: {x.ManufacturerMedicine.Medicine.RecommendedDosage}")
                 .ToList();
             }
-            if(type == "manufacturer")
+            if (type == "manufacturer")
             {
                 return medicines
                     .Select((x, i) => i == 0 ? $"-{x.ManufacturerMedicine.Medicine.MedicineName} - Manufacturer: {x.ManufacturerMedicine.Manufacturer.ManufacturerName}" : $"{x.ManufacturerMedicine.Medicine.MedicineName} - Manufacturer: {x.ManufacturerMedicine.Manufacturer.ManufacturerName}")
@@ -841,11 +841,11 @@ namespace Pharmacy.Core
         }
         public async Task<(string, List<PrescriptionMedicine>)> GetLastDeletedPrescriptionIdAndCollection()
         {
-           var prescription = await context.Prescriptions
-                .Where(p => p.IsDeleted && p.DeletedAt != null)
-                .Include(x => x.PrescriptionMedicines)
-                .OrderByDescending(p => p.DeletedAt)
-                .FirstOrDefaultAsync();
+            var prescription = await context.Prescriptions
+                 .Where(p => p.IsDeleted && p.DeletedAt != null)
+                 .Include(x => x.PrescriptionMedicines)
+                 .OrderByDescending(p => p.DeletedAt)
+                 .FirstOrDefaultAsync();
 
             return (prescription.Id, prescription.PrescriptionMedicines.ToList());
         }
@@ -940,6 +940,7 @@ namespace Pharmacy.Core
         {
             var medicines = await context.Medicines
                 .Where(x => x.IsDeleted == false)
+                .Include(x => x.Category)
                 .ToListAsync();
 
             if (medicines.Count == 0)
@@ -948,6 +949,110 @@ namespace Pharmacy.Core
             }
             return medicines;
         }
+        public async Task<List<ManufacturerMedicine>> GetAllManufacturerMedicinesData()
+        {
+            var mms = await context.ManufacturerMedicines
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.Medicine)
+                .Include(x => x.Manufacturer)
+                .ToListAsync();
+
+            if (mms.Count == 0)
+            {
+                throw new NonExistentEntity("There are no manufacturer medicines in the database, try to add some first!");
+            }
+            return mms;
+        }
+        public async Task<List<PharmacyMedicine>> GetAllPharmacyMedicinesData()
+        {
+            var pm = await context.PharmacyMedicines
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.ManufacturerMedicine)
+                 .ThenInclude(x => x.Medicine)
+                .Include(x => x.ManufacturerMedicine)
+                 .ThenInclude(x => x.Manufacturer)
+                .ToListAsync();
+
+            if (pm.Count == 0)
+            {
+                throw new NonExistentEntity("There are no pharmacy medicines in the database, try to add some first!");
+            }
+            return pm;
+        }
+        public async Task<List<Prescription>> GetAllPrescriptionsData()
+        {
+            var prescriptions = await context.Prescriptions
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.PrescriptionMedicines)
+                .ToListAsync();
+
+            if (prescriptions.Count == 0)
+            {
+                throw new NonExistentEntity("There are no prescriptions in the database, try to add some first!");
+            }
+            return prescriptions;
+        }
+        public async Task<List<(Order order, List<(OrderMedicine om, decimal UnitPrice, decimal TotalPrice)>)>> GetAllOrdersData()
+        {
+            var orders = await context.Orders
+                .Where(o => !o.IsDeleted)
+                .Include(o => o.Manufacturer)
+                .Include(o => o.OrderMedicines)
+                    .ThenInclude(om => om.Medicine)
+                .ToListAsync();
+
+            if (orders.Count == 0)
+            {
+                throw new NonExistentEntity("There are no orders in the database, try to add some first!");
+            }
+
+            var manufacturerMedicines = await context.ManufacturerMedicines.Where(x => x.IsDeleted == false).ToListAsync();
+
+            var result = new List<(Order, List<(OrderMedicine, decimal, decimal)>)>();
+
+            foreach (var order in orders)
+            {
+                var orderMedicinesWithPrices = new List<(OrderMedicine, decimal, decimal)>();
+
+                foreach (var om in order.OrderMedicines)
+                {
+                    var mm = manufacturerMedicines
+                        .FirstOrDefault(med => med.ManufacturerId == order.ManufacturerId && med.MedicineId == om.MedicineId);
+
+                    decimal unitPrice = mm?.ManufacturerPrice ?? 0m;
+                    decimal totalPrice = unitPrice * om.BoughtQuantity;
+
+                    orderMedicinesWithPrices.Add((om, unitPrice, totalPrice));
+                }
+
+                result.Add((order, orderMedicinesWithPrices));
+            }
+
+            return result;
+        }
+        public async Task<List<Sale>> GetAllSalesData()
+        {
+            var sales = await context.Sales
+                 .Where(x => x.IsDeleted == false)
+                 .Include(x => x.Prescription)
+                  .ThenInclude(x => x.PrescriptionMedicines)
+                 .Include(x => x.Prescription)
+                  .ThenInclude(x => x.Patient)
+                 .Include(x => x.Prescription)
+                  .ThenInclude(x => x.Doctor)
+                 .ToListAsync();
+
+            if (sales.Count == 0)
+            {
+                throw new NonExistentEntity("There are no sales in the database, try to add some first!");
+            }
+            return sales;
+        }
+        #endregion
+
+        #region Filtration
 
         #endregion
     }

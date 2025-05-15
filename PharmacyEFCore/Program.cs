@@ -6,6 +6,8 @@ using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 var context = new PharmacyDbContext();
+await context.Database.EnsureDeletedAsync();
+await context.Database.EnsureCreatedAsync();
 var controller = new PharmacyController(context);
 
 
@@ -917,10 +919,191 @@ while (true)
 
                         foreach (var manufacturer in await controller.GetAllManufacturersData())
                         {
-                            Console.WriteLine("| {0,-20} | {1,-35} | {2,-25} | {3, -15} |",manufacturer.ManufacturerName, manufacturer.Website, manufacturer.Email, manufacturer.Phone);
+                            Console.WriteLine("| {0,-20} | {1,-35} | {2,-25} | {3, -15} |", manufacturer.ManufacturerName, manufacturer.Website, manufacturer.Email, manufacturer.Phone);
                         }
 
                         Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "doctors":
+                    try
+                    {
+                        Console.WriteLine("\nDoctors List:");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                        Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", "Doctor's Name", "Phone", "Email", "Specialty");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+
+                        foreach (var doctor in await controller.GetAllDoctorsData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", doctor.DoctorName, doctor.Phone, doctor.Email, doctor.Specialty);
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "patients":
+                    try
+                    {
+                        Console.WriteLine("\nPatients List:");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                        Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", "Doctor's Name", "Phone", "Email", "Birth Date");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+
+                        foreach (var patient in await controller.GetAllPatientsData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", patient.PatientName, patient.Phone, patient.Email, patient.DateOfBirth.ToString("yyyy-MM-dd"));
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "medicines":
+                    try
+                    {
+                        Console.WriteLine("\nMedicines List:");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                        Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", "Medicine's Name", "Category's Name", "Recommended Dosage", "Description");
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+
+                        foreach (var medicine in await controller.GetAllMedicinesData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-15} | {2,-25} | {3, -35} |", medicine.MedicineName, medicine.Category.CategoryName == null ? "No category" : medicine.Category.CategoryName, medicine.RecommendedDosage, medicine.Description);
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 35 + 25 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "manufacturer medicine":
+                    try
+                    {
+                        Console.WriteLine("\nManufacturer Medicines List:");
+                        Console.WriteLine(new string('-', 20 + 15 + 15 + 15));
+                        Console.WriteLine("| {0,-20} | {1,-15} | {2,-15} | {3, -15} |", "Manufacturer's Name", "Medicine's Name", "Available Quantity", "Price");
+                        Console.WriteLine(new string('-', 20 + 15 + 15 + 15));
+
+                        foreach (var mm in await controller.GetAllManufacturerMedicinesData())
+                        {
+                            Console.WriteLine("| {0,-20} | {1,-15} | {2,-15} | {3, -15} |", mm.Manufacturer.ManufacturerName == null ? "No manufacturer" : mm.Manufacturer.ManufacturerName, mm.Medicine.MedicineName == null ? "No medicine" : mm.Medicine.MedicineName, mm.MadeQuantity, mm.ManufacturerPrice);
+                        }
+
+                        Console.WriteLine(new string('-', 20 + 15 + 15 + 15));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "pharmacy medicine":
+                    try
+                    {
+                        Console.WriteLine("\nPharmacy Medicines:");
+                        Console.WriteLine(new string('-', 80));
+                        Console.WriteLine("| {0,-25} | {1,-25} | {2,-10} | {2,-10} |", "Medicine", "Manufacturer", "Stock", "Price");
+                        Console.WriteLine(new string('-', 80));
+
+                        foreach (var pm in await controller.GetAllPharmacyMedicinesData())
+                        {
+                            var medicineName = pm.ManufacturerMedicine?.Medicine?.MedicineName ?? "No medicine";
+                            var manufacturerName = pm.ManufacturerMedicine?.Manufacturer?.ManufacturerName ?? "No manufacturer";
+
+                            Console.WriteLine("| {0,-25} | {1,-25} | {2,-10} | {2,-10} |", medicineName, manufacturerName, pm.StockQuantity, pm.PharmacyPrice);
+                        }
+
+                        Console.WriteLine(new string('-', 80));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "prescriptions":
+                    try
+                    {
+                        Console.WriteLine("\nPrescriptions List:");
+                        Console.WriteLine(new string('-', 100));
+                        Console.WriteLine("| {0,-20} | {0,-20} | {1,-20} | {2,-50} |", "ID", "Patient", "Doctor", "Medicines Prescribed");
+                        Console.WriteLine(new string('-', 100));
+
+                        foreach (var prescription in await controller.GetAllPrescriptionsData())
+                        {
+                            var patientName = prescription.Patient.PatientName;
+                            var doctorName = prescription.Doctor.DoctorName;
+                            var medicines = string.Join("\n", prescription.PrescriptionMedicines
+                                .Select(pm => $"Medicine Name: {pm.Medicine.MedicineName}, Dosage: {pm.Dosage}, Prescribed Quantity: {pm.PrescribedQuantity}"));
+
+                            Console.WriteLine("| {0,-20} | {0,-20} | {1,-20} | {2,-50} |", prescription.Id, patientName, doctorName, medicines);
+                        }
+
+                        Console.WriteLine(new string('-', 100));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "orders":
+                    try
+                    {
+                        var ordersWithPrices = await controller.GetAllOrdersData();
+
+                        Console.WriteLine("\nOrders List:");
+                        Console.WriteLine(new string('-', 120));
+                        Console.WriteLine("| {0,-20} | {0,-20} | {1,-25} | {2,-15} |", "ID", "Manufacturer", "Order Date", "Total Medicines");
+                        Console.WriteLine(new string('-', 120));
+
+                        foreach (var (order, orderMedicines) in ordersWithPrices)
+                        {
+                            Console.WriteLine("| {0,-20} | {0,-20} | {1,-25} | {2,-15} |", order.Id, order.Manufacturer.ManufacturerName, order.OrderDate.ToString("yyyy-MM-dd"), orderMedicines.Count);
+
+                            foreach (var (om, unitPrice, totalPrice) in orderMedicines)
+                            {
+                                string medInfo = $"-{om.Medicine.MedicineName}, Quantity: {om.BoughtQuantity}, Per Unit: {unitPrice:c}, Total: {totalPrice:c}";
+                                Console.WriteLine("| {0,-20} | {1,-25} | {2,-70} |", "", "", medInfo);
+                            }
+
+                            Console.WriteLine(new string('-', 120));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    break;
+                case "sales":
+                    try
+                    {
+                        Console.WriteLine("\nSales List:");
+                        Console.WriteLine(new string('-', 100));
+                        Console.WriteLine("| {0,-20} |", "Sold Date");
+                        Console.WriteLine(new string('-', 100));
+
+                        foreach (var sale in await controller.GetAllSalesData())
+                        {
+                            var patientName = sale.Prescription.Patient.PatientName;
+                            var doctorName = sale.Prescription.Doctor.DoctorName;
+                            var medicines = string.Join("\n", sale.Prescription.PrescriptionMedicines
+                                .Select(pm => $"Medicine Name: {pm.Medicine.MedicineName}, Dosage: {pm.Dosage}, Prescribed Quantity: {pm.PrescribedQuantity}"));
+
+                            Console.WriteLine("| {0,-20} | {0,-20} | {0,-20} | {1,-20} | {2,-50} |", sale.SaleDate.ToString("yyyy-MM-dd"), sale.Prescription.Id, patientName, doctorName, medicines);
+                        }
+
+                        Console.WriteLine(new string('-', 100));
                     }
                     catch (Exception ex)
                     {
@@ -933,6 +1116,7 @@ while (true)
             }
             #endregion
             break;
+
         case 0:
             Console.WriteLine("Exiting the program...");
             return;
