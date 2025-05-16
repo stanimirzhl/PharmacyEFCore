@@ -1,0 +1,3 @@
+﻿Actavis,https://actavis.bg,info@actavis.bg,+35929123456
+Sopharma,https://sopharma.bg,contact@sopharma.bg,+35928888888
+Teva,https://teva.bg,support@teva.bg,+35929999999

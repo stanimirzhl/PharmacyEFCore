@@ -1,18 +1,57 @@
 ﻿using Pharmacy.Core;
 using Pharmacy.Data.Data;
 using Pharmacy.Data.Data.Models;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 var context = new PharmacyDbContext();
 await context.Database.EnsureDeletedAsync();
 await context.Database.EnsureCreatedAsync();
+
+Seeder seeder = new Seeder(context);
+
+string SeederPath(string fileName) =>
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SeederInfo", fileName);
+
+await seeder.SeedCategories(SeederPath("categories.txt"));
+await seeder.SeedManufacturers(SeederPath("manufacturers.txt"));
+await seeder.SeedDoctors(SeederPath("doctors.txt"));
+await seeder.SeedPatients(SeederPath("patients.txt"));
+await seeder.SeedMedicines(SeederPath("medicines.txt"));
+await seeder.SeedManufacturerMedicine(SeederPath("manufacturer_medicine.txt"));
+await seeder.SeedPharmacyMedicine(SeederPath("pharmacy_medicine.txt"));
+await seeder.SeedPrescriptions(SeederPath("prescriptions.txt"));
+await seeder.SeedOrders(SeederPath("orders.txt"));
+await seeder.SeedSales(SeederPath("sales.txt"));
+await seeder.SeedOrderMedicines(SeederPath("order_medicine.txt"));
+await seeder.SeedPrescriptionMedicines(SeederPath("prescription_medicine.txt"));
+
 var controller = new PharmacyController(context);
 
 
 while (true)
 {
+    Console.WriteLine("=== PHARMACY SYSTEM MENU ===");
+    Console.WriteLine("1. Add to table");
+    Console.WriteLine("2. Delete data from table");
+    Console.WriteLine("3. Update data from table");
+    Console.WriteLine("4. Get data from table");
+    Console.WriteLine("5. Get Patients By Medicine Name");
+    Console.WriteLine("6. Get Total Sales By Year");
+    Console.WriteLine("7. Get Last Prescription By Patient");
+    Console.WriteLine("8. Get All Orders By Manufacturer");
+    Console.WriteLine("9. Get Prescriptions By Medicine Name");
+    Console.WriteLine("10. Get Unordered Medicines");
+    Console.WriteLine("11. Get Low On Stock Medicines In Pharmacy");
+    Console.WriteLine("12. Get Old Patients");
+    Console.WriteLine("13. Get Orders In The Last 30 Days");
+    Console.WriteLine("14. Get All Manufacturers With Email Ending In '.bg'");
+    Console.WriteLine("0. Exit");
+    Console.Write("Select an option: ");
+    Console.WriteLine();
     int choice;
     string stringifiedChoice = Console.ReadLine();
     while (!int.TryParse(stringifiedChoice, out choice))
@@ -1116,7 +1155,135 @@ while (true)
             }
             #endregion
             break;
+        case 5:
+            try
+            {
+                Console.WriteLine("Here is a list of all medicines in the pharmacy, choose one to see if there is a user who had used it: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicinesInPharmacy())}");
+                Console.Write("Enter medicine name: ");
+                string medName = Console.ReadLine();
 
+                int medId = await controller.GetMedicineId(medName);
+
+                foreach (var p in await controller.GetPatientsByMedicineName(medId))
+                {
+                    Console.WriteLine($"Patient: {p}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 6:
+            try
+            {
+                Console.Write("Write the year you want to see the total sales for: ");
+                int year = int.Parse(Console.ReadLine());
+                if (!int.TryParse(year.ToString(), out year))
+                {
+                    Console.WriteLine("Invalid type for year, try again with the correct one!");
+                    break;
+                }
+
+                Console.WriteLine($"Total sales: {await controller.GetTotalSalesByYear(year):c}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+            }
+            break;
+        case 7:
+            try
+            {
+                Console.WriteLine("Choose a patient you wish to see his last prescription and the medicine in it: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllPatients())}");
+                string patient = Console.ReadLine();
+                int patientId = await controller.GetPatientId(patient);
+
+                Console.WriteLine(await controller.GetLastPrescriptionByPatient(patientId));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 8:
+            try
+            {
+                Console.WriteLine("Choose a manufacturer you wish to see the orders made to him: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllManufacturers())}");
+                string manufacturer = Console.ReadLine();
+                int manId = await controller.GetManufacturerId(manufacturer);
+
+                Console.WriteLine(await controller.GetAllOrdersByManufacturer(manId));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 9:
+            try
+            {
+                Console.WriteLine("Choose a medicine whose prescriptions you wish to see it's in: " + "\n" + $"{string.Join(Environment.NewLine + "-", await controller.GetAllMedicinesInPharmacy())}");
+                string medicine = Console.ReadLine();
+                int medId = await controller.GetMedicineId(medicine);
+                Console.WriteLine(await controller.GetPrescriptionsByMedicineName(medId));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 10:
+            try
+            {
+                Console.WriteLine(await controller.GetUnorderedMedicines());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 11:
+            try
+            {
+                Console.WriteLine(await controller.GetLowOnStockMedicinesInPharmacy());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 12:
+            try
+            {
+                Console.WriteLine(await controller.GetOldPatients());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 13:
+            try
+            {
+                Console.WriteLine(await controller.GetOrdersInTheLast30Days());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
+        case 14:
+            try
+            {
+                Console.WriteLine(await controller.GetAllManufacturersWithEmailEndingInBg());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            break;
         case 0:
             Console.WriteLine("Exiting the program...");
             return;

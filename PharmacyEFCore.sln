@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PharmacyEFCore", "PharmacyE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pharmacy.Data", "Pharmacy.Data\Pharmacy.Data.csproj", "{1F002087-B6DD-4140-8E9A-6765AFF3C1B0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pharmacy,Core", "Pharmacy.Core\Pharmacy,Core.csproj", "{90563C77-C106-46E8-B35A-953C0F40D7FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pharmacy.Core", "Pharmacy.Core\Pharmacy.Core.csproj", "{90563C77-C106-46E8-B35A-953C0F40D7FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

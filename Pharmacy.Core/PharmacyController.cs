@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using Microsoft.Identity.Client;
 using Pharmacy.Data.Data;
 using Pharmacy.Data.Data.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 
 namespace Pharmacy.Core
 {
@@ -1053,7 +1055,190 @@ namespace Pharmacy.Core
         #endregion
 
         #region Filtration
+        public async Task<List<string>> GetPatientsByMedicineName(int medicineId)
+        {
+            return await context.PrescriptionMedicines
+                .Where(x => x.Medicine.Id == medicineId && x.Prescription.IsDeleted == false)
+                .Select(x => x.Prescription.Patient.PatientName)
+                .Distinct()
+                .ToListAsync() ?? throw new NonExistentEntity("No patient with that medicine have been found!");
+        }
+        public async Task<decimal> GetTotalSalesByYear(int year)
+        {
+            var sales = await context.Sales
+                .Where(x => x.SaleDate.Year == year && x.IsDeleted == false)
+                .Include(x => x.Prescription)
+                    .ThenInclude(x => x.PrescriptionMedicines)
+                .ToListAsync() ?? throw new NonExistentEntity("No sales for this year!");
 
+            decimal total = 0;
+
+            foreach (var sale in sales)
+            {
+                foreach (var pm in sale.Prescription.PrescriptionMedicines)
+                {
+                    var price = await context.ManufacturerMedicines
+                        .Where(x => x.MedicineId == pm.MedicineId)
+                        .Select(x => x.ManufacturerPrice)
+                        .FirstOrDefaultAsync();
+
+                    total += pm.PrescribedQuantity * price;
+                }
+            }
+
+            return total;
+        }
+        public async Task<string> GetLastPrescriptionByPatient(int id)
+        {
+            var patient = await context.Patients
+                .Where(x => x.IsDeleted == false)
+                .Include(x => x.Prescriptions)
+                 .ThenInclude(x => x.PrescriptionMedicines)
+                  .ThenInclude(x => x.Medicine)
+                .Include(x => x.Prescriptions)
+                 .ThenInclude(x => x.Doctor)
+                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NonExistentEntity("Patient by the given name cannot be found, try again!");
+
+            var lastPrescription = patient.Prescriptions
+                .Where(x => x.IsDeleted == false)
+                .OrderByDescending(x => x.PrescribedAt)
+                .FirstOrDefault() ?? throw new NonExistentEntity("Patient doesn't have any prescriptions yet, try again later!");
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine($"Patient: {patient.PatientName} had prescription prescribed at: {lastPrescription.PrescribedAt} by Doctor: {lastPrescription.Doctor}, with medicines: ");
+            foreach (var medicine in lastPrescription.PrescriptionMedicines)
+            {
+                sb.AppendLine($"Medicine Name: {medicine.Medicine.MedicineName}, Dosage: {medicine.Dosage}, Prescribed Quantity of the medicine: {medicine.PrescribedQuantity}");
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetAllOrdersByManufacturer(int manId)
+        {
+            var orders = await context.Orders
+                .Where(x => x.ManufacturerId == manId && x.IsDeleted == false)
+                .Include(x => x.Manufacturer)
+                .Include(x => x.OrderMedicines)
+                 .ThenInclude(x => x.Medicine)
+                .ToListAsync() ?? throw new NonExistentEntity("No orders have been made to the manufacturer, try again later!");
+
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var order in orders)
+            {
+                sb.AppendLine($"Order Date: {order.OrderDate}");
+                foreach (var om in order.OrderMedicines)
+                {
+                    sb.AppendLine($"-Medicine: {om.Medicine.MedicineName}, Quantity: {om.BoughtQuantity}");
+                }
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetPrescriptionsByMedicineName(int medicineId)
+        {
+            var prescriptions = await context.Prescriptions
+                .Where(x => x.PrescriptionMedicines.Any(x => x.MedicineId == medicineId) && x.IsDeleted == false)
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .ToListAsync() ?? throw new NonExistentEntity("No prescriptions have the desired medicine, try again later!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var prescription in prescriptions)
+            {
+                sb.AppendLine($"Prescription ID: {prescription.Id}, Date: {prescription.PrescribedAt}, Doctor: {prescription.Doctor.DoctorName}, Patient: {prescription.Patient.PatientName}");
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetUnorderedMedicines()
+        {
+            var medicines = await context.Medicines
+                .Where(x => !x.OrderMedicines.Any() && x.IsDeleted == false)
+                .ToListAsync() ?? throw new ArgumentException("Every medicine has been ordered or there aren't any medicines availabe yet!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var medicine in medicines)
+            {
+                sb.AppendLine($"-{medicine.MedicineName}");
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetLowOnStockMedicinesInPharmacy()
+        {
+            var pms = await context.PharmacyMedicines
+                .Where(x => x.StockQuantity < 10 && x.IsDeleted == false)
+                .Include(x => x.ManufacturerMedicine)
+                  .ThenInclude(x => x.Medicine)
+                .ToListAsync() ?? throw new ArgumentException("No medicines with stock quantity under 10!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var medicine in pms)
+            {
+                sb.AppendLine($"-{medicine.ManufacturerMedicine.Medicine.MedicineName}, Quantity: {medicine.StockQuantity}");
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetOldPatients()
+        {
+            var patients = await context.Patients
+               .Where(x => x.DateOfBirth < DateTime.Now.AddYears(-65) && x.IsDeleted == false)
+               .ToListAsync() ?? throw new ArgumentException("No patients older than 60!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var patient in patients)
+            {
+                sb.AppendLine($"-{patient.PatientName}, Date of Birth: {patient.DateOfBirth}");
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetOrdersInTheLast30Days()
+        {
+            var orders = await context.Orders
+              .Where(x => x.OrderDate >= DateTime.Now.AddDays(-30) && x.IsDeleted == false)
+              .Include(x => x.Manufacturer)
+               .ThenInclude(x => x.ManufacturerMedicines)
+              .Include(x => x.OrderMedicines)
+               .ThenInclude(x => x.Medicine)
+              .ToListAsync() ?? throw new ArgumentException("No orders in the last 30 days!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var order in orders)
+            {
+                sb.AppendLine($"-{order.Id}, Order Date: {order.OrderDate}, Made to: {order.Manufacturer.ManufacturerName}, Medicines: ");
+                foreach (var medicine in order.OrderMedicines)
+                {
+                    sb.AppendLine($"-Medicine Name: {medicine.Medicine.MedicineName}, Bought Quantity: {medicine.BoughtQuantity}, Recommended Dosage: {medicine.Medicine.RecommendedDosage}");
+                }
+            }
+
+            return sb.ToString().Trim();
+        }
+        public async Task<string> GetAllManufacturersWithEmailEndingInBg()
+        {
+            var manufacturers = await context.Manufacturers
+                .Where(x => x.Email.EndsWith(".bg") && x.IsDeleted == false)
+                .ToListAsync() ?? throw new ArgumentException("No manufacturers with email ending in .bg!");
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var manufacturer in manufacturers)
+            {
+                sb.AppendLine($"-{manufacturer.ManufacturerName}, Email: {manufacturer.Email}");
+            }
+
+            return sb.ToString().Trim();
+        }
         #endregion
     }
 }

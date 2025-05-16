@@ -1,0 +1,3 @@
+﻿Petar Ivanov,1945-03-15,petar.ivanov@example.com,+359888000001
+Ivanka Petrova,1953-07-22,ivanka.petrova@example.com,+359888000002
+Georgi Georgiev,1920-01-10,georgi.g@example.com,+359888000003

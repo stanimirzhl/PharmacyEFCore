@@ -1,0 +1,5 @@
+﻿Pain Relief,Medicines for headaches and body pain
+Antibiotics,Used to treat bacterial infections
+Allergy,Relieves allergic symptoms
+Cold & Flu,For cold and flu symptoms
+Digestive Health,For stomach and digestion-related issues

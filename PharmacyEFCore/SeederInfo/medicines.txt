@@ -1,0 +1,5 @@
+﻿Paracetamol,Effective against mild to moderate pain,1,500mg
+Amoxicillin,Broad-spectrum antibiotic,2,250mg
+Loratadine,Used to treat allergies,3,10mg
+Coldrex,Relieves cold symptoms,4,2,100mg
+Mezym,Fights digestive issues,5,1,200mg
