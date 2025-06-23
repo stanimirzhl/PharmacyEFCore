@@ -1,0 +1,3 @@
+﻿Dr. Ivan Petrov,Cardiologist,ivan.petrov@hospital.bg,+359888123456
+Dr. Maria Dimitrova,General Practitioner,maria.d@clinic.bg,+359877654321
+Dr. Georgi Stoyanov,Dermatologist,georgi.s@derma.bg,+359899111222

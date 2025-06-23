@@ -22,7 +22,7 @@ namespace Pharmacy.Data.Data
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) 
-            => optionsBuilder.UseSqlServer("Data Source=.\\SQLEXPRESS;Initial Catalog=PharmacyDb;Integrated Security=True;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
+            => optionsBuilder.UseSqlServer("Data Source=(localdb)\\ProjectModels;Database=PharmacyDb;Integrated Security=True;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True");
 
         public virtual DbSet<Category> Categories {get; set;}
         public virtual DbSet<Manufacturer> Manufacturers {get; set;}
