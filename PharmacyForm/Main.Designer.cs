@@ -137,7 +137,7 @@
 			// btnSeniorPatients
 			// 
 			btnSeniorPatients.Font = new Font("Segoe UI", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 204);
-			btnSeniorPatients.Location = new Point(140, 442);
+			btnSeniorPatients.Location = new Point(171, 442);
 			btnSeniorPatients.Name = "btnSeniorPatients";
 			btnSeniorPatients.Size = new Size(183, 91);
 			btnSeniorPatients.TabIndex = 9;
@@ -147,7 +147,7 @@
 			// btnRecentOrders
 			// 
 			btnRecentOrders.Font = new Font("Segoe UI", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 204);
-			btnRecentOrders.Location = new Point(360, 442);
+			btnRecentOrders.Location = new Point(381, 442);
 			btnRecentOrders.Name = "btnRecentOrders";
 			btnRecentOrders.Size = new Size(183, 91);
 			btnRecentOrders.TabIndex = 10;
@@ -167,9 +167,9 @@
 			// btnExit
 			// 
 			btnExit.Font = new Font("Segoe UI", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 204);
-			btnExit.Location = new Point(384, 604);
+			btnExit.Location = new Point(381, 602);
 			btnExit.Name = "btnExit";
-			btnExit.Size = new Size(180, 68);
+			btnExit.Size = new Size(183, 68);
 			btnExit.TabIndex = 12;
 			btnExit.Text = "Exit";
 			btnExit.UseVisualStyleBackColor = true;

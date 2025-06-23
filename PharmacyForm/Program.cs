@@ -1,6 +1,5 @@
 using Pharmacy.Core;
 using Pharmacy.Data.Data;
-using System.Net.Http.Headers;
 
 namespace PharmacyForm
 {
@@ -39,12 +38,15 @@ namespace PharmacyForm
 				}
 			}
 
-			var context2 = new PharmacyDbContext();
+			using (var context2 = new PharmacyDbContext())
+			{
 
-			PharmacyController controller = new PharmacyController(context2);
+				PharmacyController controller = new PharmacyController(context2);
 
 
-			Application.Run(new Main(controller));
+				Application.Run(new Main(controller));
+			}
+
 		}
 	}
 }

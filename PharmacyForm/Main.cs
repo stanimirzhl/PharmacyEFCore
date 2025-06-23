@@ -51,32 +51,32 @@ namespace PharmacyForm
 
 		private void btnPrescriptionsByMedicine_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new PrescriptionsByMedicineForm());
+			this.ShowFormWithBackButton(new PrescriptionsByMedicineForm(controller));
 		}
 
 		private void btnUnorderedMedicines_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new UnorderedMedicinesForm());
+			this.ShowFormWithBackButton(new UnorderedMedicinesForm(controller));
 		}
 
 		private void btnLowStockMedicines_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new LowStockMedicinesForm());
+			this.ShowFormWithBackButton(new LowStockMedicinesForm(controller));
 		}
 
 		private void btnSeniorPatients_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new SeniorPatientsForm());
+			this.ShowFormWithBackButton(new SeniorPatientsForm(controller));
 		}
 
 		private void btnRecentOrders_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new RecentOrdersForm());
+			this.ShowFormWithBackButton(new RecentOrdersForm(controller));
 		}
 
 		private void btnManufacturersWithBgEmail_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new ManufacturersWithBgEmailForm());
+			this.ShowFormWithBackButton(new ManufacturersWithBgEmailForm(controller));
 		}
 
 		private void btnExit_Click(object sender, EventArgs e)

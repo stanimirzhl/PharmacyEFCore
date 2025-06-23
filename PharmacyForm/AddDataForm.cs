@@ -1,16 +1,6 @@
 ﻿using Pharmacy.Core;
 using Pharmacy.Data.Data.Models;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 namespace PharmacyForm
 {
@@ -42,12 +32,36 @@ namespace PharmacyForm
 				await Add(selected);
 
 				MessageBox.Show($"{selected} added successfully!");
+
+				this.ClearInputs();
 			}
 			catch (Exception ex)
 			{
 				MessageBox.Show($"Error: {ex.Message}");
 			}
 		}
+
+		private void ClearInputs()
+		{
+			foreach (Control control in pnlFields.Controls)
+			{
+				switch (control)
+				{
+					case TextBox tb:
+						tb.Text = string.Empty;
+						break;
+					case ComboBox cb:
+						cb.SelectedIndex = -1;
+						cb.Text = string.Empty;
+						break;
+					case DateTimePicker dtp:
+						dtp.Value = DateTime.Now;
+						break;
+				}
+			}
+		}
+
+
 
 		private async Task Add(string name)
 		{
@@ -214,6 +228,18 @@ namespace PharmacyForm
 						Width = 300
 					};
 				}
+				else if (lookupData.ContainsKey(label))
+				{
+					var cmb = new ComboBox
+					{
+						Name = $"input_{label}",
+						Location = new Point(220, top),
+						Width = 300,
+						DropDownStyle = ComboBoxStyle.DropDownList
+					};
+					cmb.Items.AddRange(lookupData[label].Select(item => item.Display).ToArray());
+					input = cmb;
+				}
 				else
 				{
 					input = new TextBox
@@ -223,6 +249,7 @@ namespace PharmacyForm
 						Width = 300
 					};
 				}
+
 
 				pnlFields.Controls.Add(lbl);
 				pnlFields.Controls.Add(input);
@@ -342,12 +369,15 @@ namespace PharmacyForm
 				("PrescriptionId", typeof(string))
 			}
 		};
-		private string GetText(string fieldName)
+		private string GetText(string label)
 		{
-			var ctrl = pnlFields.Controls.Find($"input_{fieldName}", true).FirstOrDefault();
-			if (ctrl is TextBox tb)
-				return tb.Text;
-			throw new Exception($"TextBox for {fieldName} not found.");
+			var control = pnlFields.Controls.Find($"input_{label}", true).FirstOrDefault();
+			return control switch
+			{
+				TextBox tb => tb.Text,
+				ComboBox cb => lookupData[label].FirstOrDefault(x => x.Display == cb.SelectedItem?.ToString()).Value.ToString(),
+				_ => string.Empty
+			};
 		}
 	}
 }
