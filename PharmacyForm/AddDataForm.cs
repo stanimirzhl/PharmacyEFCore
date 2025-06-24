@@ -85,10 +85,14 @@ namespace PharmacyForm
 
 				case "Manufacturer":
 					if (string.IsNullOrEmpty(GetText("ManufacturerName")) || string.IsNullOrEmpty(GetText("Email")) ||
-						!GetText("Email").Contains('@') ||
 						string.IsNullOrEmpty(GetText("Website")) || string.IsNullOrEmpty(GetText("Phone")))
 					{
 						MessageBox.Show("Please fill in all fields for Manufacturer.");
+						return false;
+					}
+					if (!GetText("Email").Contains('@'))
+					{
+						MessageBox.Show("Invalid email format. Please enter a valid email address with @.");
 						return false;
 					}
 					await controller.AddManufacturer(GetText("ManufacturerName"), GetText("Email"), GetText("Website"), GetText("Phone"));
@@ -96,10 +100,14 @@ namespace PharmacyForm
 
 				case "Doctor":
 					if (string.IsNullOrEmpty(GetText("DoctorName")) || string.IsNullOrEmpty(GetText("Email")) ||
-						!GetText("Email").Contains('@') ||
 						string.IsNullOrEmpty(GetText("Phone")) || string.IsNullOrEmpty(GetText("Specialty")))
 					{
 						MessageBox.Show("Please fill in all fields for Doctor.");
+						return false;
+					}
+					if (!GetText("Email").Contains('@'))
+					{
+						MessageBox.Show("Invalid email format. Please enter a valid email address with @.");
 						return false;
 					}
 					await controller.AddDoctor(GetText("DoctorName"), GetText("Email"), GetText("Phone"), GetText("Specialty"));
@@ -107,10 +115,14 @@ namespace PharmacyForm
 
 				case "Patient":
 					if (string.IsNullOrEmpty(GetText("PatientName")) || string.IsNullOrEmpty(GetText("Email")) ||
-						!GetText("Email").Contains('@') ||
 						string.IsNullOrEmpty(GetText("Phone")))
 					{
 						MessageBox.Show("Please fill in all fields for Patient.");
+						return false;
+					}
+					if (!GetText("Email").Contains('@'))
+					{
+						MessageBox.Show("Invalid email format. Please enter a valid email address with @.");
 						return false;
 					}
 					DateTime dob = ((DateTimePicker)pnlFields.Controls.Find("input_DateOfBirth", true)[0]).Value;
