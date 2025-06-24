@@ -1,6 +1,7 @@
 ﻿using Pharmacy.Core;
 using Pharmacy.Data.Data.Models;
 using System.Data;
+using System.Text.RegularExpressions;
 
 namespace PharmacyForm
 {
@@ -15,25 +16,34 @@ namespace PharmacyForm
 
 		public AddDataForm(PharmacyController controller)
 		{
+			this.controller = controller;
 			InitializeComponent();
 			InitializeControls();
 
 			Load += AddDataForm_Load;
 
-			this.controller = controller;
 		}
 
 		private async void BtnSubmit_Click(object sender, EventArgs e)
 		{
+
+			if (cmbEntity.SelectedItem is null)
+			{
+				MessageBox.Show("Please select table to add.");
+				return;
+			}
+
 			string selected = cmbEntity.SelectedItem.ToString();
 
 			try
 			{
-				await Add(selected);
+				bool result = await Add(selected);
 
-				MessageBox.Show($"{selected} added successfully!");
-
-				this.ClearInputs();
+				if (result)
+				{
+					MessageBox.Show($"{selected} added successfully!");
+					this.ClearInputs();
+				}
 			}
 			catch (Exception ex)
 			{
@@ -61,30 +71,60 @@ namespace PharmacyForm
 			}
 		}
 
-
-
-		private async Task Add(string name)
+		private async Task<bool> Add(string name)
 		{
 			switch (name)
 			{
 				case "Category":
+					if (string.IsNullOrEmpty(GetText("CategoryName")) || string.IsNullOrEmpty(GetText("CategoryDescription")))
+					{
+						MessageBox.Show("Please fill in all fields for Category.");
+						return false;
+					}
 					await controller.AddCategory(GetText("CategoryName"), GetText("CategoryDescription"));
 					break;
 
 				case "Manufacturer":
+					if (string.IsNullOrEmpty(GetText("ManufacturerName")) || string.IsNullOrEmpty(GetText("Email")) ||
+						!GetText("Email").Contains('@') ||
+						string.IsNullOrEmpty(GetText("Website")) || string.IsNullOrEmpty(GetText("Phone")))
+					{
+						MessageBox.Show("Please fill in all fields for Manufacturer.");
+						return false;
+					}
 					await controller.AddManufacturer(GetText("ManufacturerName"), GetText("Email"), GetText("Website"), GetText("Phone"));
 					break;
 
 				case "Doctor":
+					if (string.IsNullOrEmpty(GetText("DoctorName")) || string.IsNullOrEmpty(GetText("Email")) ||
+						!GetText("Email").Contains('@') ||
+						string.IsNullOrEmpty(GetText("Phone")) || string.IsNullOrEmpty(GetText("Specialty")))
+					{
+						MessageBox.Show("Please fill in all fields for Doctor.");
+						return false;
+					}
 					await controller.AddDoctor(GetText("DoctorName"), GetText("Email"), GetText("Phone"), GetText("Specialty"));
 					break;
 
 				case "Patient":
+					if (string.IsNullOrEmpty(GetText("PatientName")) || string.IsNullOrEmpty(GetText("Email")) ||
+						!GetText("Email").Contains('@') ||
+						string.IsNullOrEmpty(GetText("Phone")))
+					{
+						MessageBox.Show("Please fill in all fields for Patient.");
+						return false;
+					}
 					DateTime dob = ((DateTimePicker)pnlFields.Controls.Find("input_DateOfBirth", true)[0]).Value;
 					await controller.AddPatient(GetText("PatientName"), GetText("Email"), GetText("Phone"), dob);
 					break;
 
 				case "Medicine":
+					if (string.IsNullOrEmpty(GetText("MedicineName")) || string.IsNullOrEmpty(GetText("Description")) ||
+						string.IsNullOrEmpty(GetText("RecommendedDosage")) || string.IsNullOrEmpty(GetText("CategoryId")))
+					{
+						MessageBox.Show("Please fill in all fields for Medicine.");
+						return false;
+					}
 					await controller.AddMedicine(
 						GetText("MedicineName"),
 						GetText("Description"),
@@ -93,6 +133,18 @@ namespace PharmacyForm
 					break;
 
 				case "ManufacturerMedicine":
+					if (string.IsNullOrEmpty(GetText("MedicineId")) || string.IsNullOrEmpty(GetText("ManufacturerId")) ||
+						string.IsNullOrEmpty(GetText("ManufacturerPrice")) || string.IsNullOrEmpty(GetText("MadeQuantity")))
+					{
+						MessageBox.Show("Please fill in all fields for Manufacturer Medicine.");
+						return false;
+					}
+					if (!decimal.TryParse(GetText("ManufacturerPrice"), out decimal manufacturerPrice) ||
+						!int.TryParse(GetText("MadeQuantity"), out int madeQuantity))
+					{
+						MessageBox.Show("Invalid price or quantity format.");
+						return false;
+					}
 					await controller.AddManufacturerMedicine(
 						int.Parse(GetText("MedicineId")),
 						int.Parse(GetText("ManufacturerId")),
@@ -101,6 +153,18 @@ namespace PharmacyForm
 					break;
 
 				case "PharmacyMedicine":
+					if (string.IsNullOrEmpty(GetText("ManufacturerId")) || string.IsNullOrEmpty(GetText("MedicineId")) ||
+						string.IsNullOrEmpty(GetText("StockQuantity")) || string.IsNullOrEmpty(GetText("PharmacyPrice")))
+					{
+						MessageBox.Show("Please fill in all fields for Pharmacy Medicine.");
+						return false;
+					}
+					if (!decimal.TryParse(GetText("PharmacyPrice"), out decimal pharmacyPrice) ||
+						!int.TryParse(GetText("StockQuantity"), out int stockQuantity))
+					{
+						MessageBox.Show("Invalid price or quantity format.");
+						return false;
+					}
 					await controller.AddPharmacyMedicine(
 						int.Parse(GetText("ManufacturerId")),
 						int.Parse(GetText("MedicineId")),
@@ -109,6 +173,11 @@ namespace PharmacyForm
 					break;
 
 				case "Prescription":
+					if (string.IsNullOrEmpty(GetText("PatientId")) || string.IsNullOrEmpty(GetText("DoctorId")))
+					{
+						MessageBox.Show("Please fill in all fields for Prescription.");
+						return false;
+					}
 					await controller.AddPrescription(
 						int.Parse(GetText("PatientId")),
 						int.Parse(GetText("DoctorId")),
@@ -116,18 +185,50 @@ namespace PharmacyForm
 					break;
 
 				case "PrescriptionMedicine":
+					if (string.IsNullOrEmpty(GetText("PrescriptionId")) || string.IsNullOrEmpty(GetText("MedicineId")) ||
+						string.IsNullOrEmpty(GetText("Dosage")) || string.IsNullOrEmpty(GetText("PrescribedQuantity")))
+					{
+						MessageBox.Show("Please fill in all fields for Prescription Medicine.");
+						return false;
+					}
+					if (!int.TryParse(GetText("PrescribedQuantity"), out int prescribedQuantity))
+					{
+						MessageBox.Show("Invalid quantity format.");
+						return false;
+					}
+					if (!Regex.IsMatch(GetText("Dosage"), @"^\d+mg$"))
+					{
+						MessageBox.Show("Dosage must be in the format 'Xmg' where X is a number (e.g., 500mg).");
+						return false;
+					}
 					await controller.AddPrescriptionMedicine(
-					   GetText("PrescriptionId"),
-					   int.Parse(GetText("MedicineId")),
-					   GetText("Dosage"),
-					   int.Parse(GetText("PrescribedQuantity")));
+				   GetText("PrescriptionId"),
+				   int.Parse(GetText("MedicineId")),
+				   GetText("Dosage"),
+				   int.Parse(GetText("PrescribedQuantity")));
 					break;
 
 				case "Order":
+					if (string.IsNullOrEmpty(GetText("ManufacturerId")))
+					{
+						MessageBox.Show("Please fill in all fields for Order.");
+						return false;
+					}
 					await controller.AddOrder(int.Parse(GetText("ManufacturerId")));
 					break;
 
 				case "OrderMedicine":
+					if (string.IsNullOrEmpty(GetText("OrderId")) || string.IsNullOrEmpty(GetText("MedicineId")) ||
+						string.IsNullOrEmpty(GetText("BoughtQuantity")))
+					{
+						MessageBox.Show("Please fill in all fields for Order Medicine.");
+						return false;
+					}
+					if (!int.TryParse(GetText("BoughtQuantity"), out int boughtQuantity))
+					{
+						MessageBox.Show("Invalid quantity format.");
+						return false;
+					}
 					await controller.AddOrderMedicine(
 						GetText("OrderId"),
 						int.Parse(GetText("MedicineId")),
@@ -135,6 +236,11 @@ namespace PharmacyForm
 					break;
 
 				case "Sale":
+					if (string.IsNullOrEmpty(GetText("PrescriptionId")))
+					{
+						MessageBox.Show("Please fill in all fields for Sale.");
+						return false;
+					}
 					await controller.AddSale(GetText("PrescriptionId"));
 					break;
 
@@ -142,6 +248,7 @@ namespace PharmacyForm
 					MessageBox.Show("No such entity, try again with a valid one!");
 					break;
 			}
+			return true;
 		}
 
 		private void InitializeControls()
@@ -208,7 +315,7 @@ namespace PharmacyForm
 
 			foreach (var (label, type) in fields)
 			{
-				var lbl = new Label
+				Label lbl = new Label
 				{
 					Text = label,
 					ForeColor = Color.White,
@@ -230,7 +337,7 @@ namespace PharmacyForm
 				}
 				else if (lookupData.ContainsKey(label))
 				{
-					var cmb = new ComboBox
+					ComboBox cmb = new ComboBox
 					{
 						Name = $"input_{label}",
 						Location = new Point(220, top),
@@ -263,12 +370,12 @@ namespace PharmacyForm
 			try
 			{
 				await LoadData();
-			}
+		}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Error loading lookups: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				//MessageBox.Show($"Error loading lookups: {ex.Message}");
 			}
-		}
+}
 
 		private async Task LoadData()
 		{
@@ -375,7 +482,9 @@ namespace PharmacyForm
 			return control switch
 			{
 				TextBox tb => tb.Text,
-				ComboBox cb => lookupData[label].FirstOrDefault(x => x.Display == cb.SelectedItem?.ToString()).Value.ToString(),
+				ComboBox cb => cb.SelectedItem != null
+					? lookupData[label].FirstOrDefault(x => x.Display == cb.SelectedItem.ToString()).Value?.ToString()
+					: null,
 				_ => string.Empty
 			};
 		}

@@ -31,22 +31,22 @@ namespace PharmacyForm
 
 		private void btnPatientsByMedicine_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new PatientsByMedicineForm());
+			this.ShowFormWithBackButton(new PatientsByMedicineForm(controller));
 		}
 
 		private void btnSalesByYear_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new TotalSalesByYearForm());
+			this.ShowFormWithBackButton(new TotalSalesByYearForm(controller));
 		}
 
 		private void btnLastPrescriptionByPatient_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new LastPrescriptionForm());
+			this.ShowFormWithBackButton(new LastPrescriptionForm(controller));
 		}
 
 		private void btnOrdersToManufacturer_Click(object sender, EventArgs e)
 		{
-			this.ShowFormWithBackButton(new OrdersToManufacturerForm());
+			this.ShowFormWithBackButton(new OrdersToManufacturerForm(controller));
 		}
 
 		private void btnPrescriptionsByMedicine_Click(object sender, EventArgs e)

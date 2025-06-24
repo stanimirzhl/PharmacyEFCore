@@ -899,6 +899,7 @@ namespace Pharmacy.Core
 			}
 			return categories;
 		}
+
 		public async Task<List<Manufacturer>> GetAllManufacturersData()
 		{
 			var manufacturers = await context.Manufacturers
@@ -1054,11 +1055,18 @@ namespace Pharmacy.Core
 		#region Filtration
 		public async Task<List<string>> GetPatientsByMedicineName(int medicineId)
 		{
-			return await context.PrescriptionMedicines
+			var patients = await context.PrescriptionMedicines
 				.Where(x => x.Medicine.Id == medicineId && x.Prescription.IsDeleted == false)
 				.Select(x => x.Prescription.Patient.PatientName)
 				.Distinct()
-				.ToListAsync() ?? throw new NonExistentEntity("No patient with that medicine have been found!");
+				.ToListAsync();
+
+			if(patients.Count == 0)
+			{
+				throw new NonExistentEntity("No patient with that medicine have been found!");
+			}
+
+			return patients;
 		}
 		public async Task<decimal> GetTotalSalesByYear(int year)
 		{
@@ -1066,7 +1074,12 @@ namespace Pharmacy.Core
 				.Where(x => x.SaleDate.Year == year && x.IsDeleted == false)
 				.Include(x => x.Prescription)
 					.ThenInclude(x => x.PrescriptionMedicines)
-				.ToListAsync() ?? throw new NonExistentEntity("No sales for this year!");
+				.ToListAsync();
+
+			if(sales.Count == 0)
+			{
+				throw new NonExistentEntity("No sales for this year!");
+			}
 
 			decimal total = 0;
 
@@ -1118,7 +1131,12 @@ namespace Pharmacy.Core
 				.Include(x => x.Manufacturer)
 				.Include(x => x.OrderMedicines)
 				 .ThenInclude(x => x.Medicine)
-				.ToListAsync() ?? throw new NonExistentEntity("No orders have been made to the manufacturer, try again later!");
+				.ToListAsync();
+
+			if(orders.Count == 0)
+			{
+				throw new NonExistentEntity("No orders have been made to the manufacturer, try again later!");
+			}
 
 
 			StringBuilder sb = new StringBuilder();

@@ -34,12 +34,14 @@ namespace PharmacyForm
 
 			medicines = new ComboBox
 			{
-				DataSource = lookupData["MedicineId"].Select(m => m.Display).ToList(),
 				Location = new Point(170, 20),
 				Width = 300,
 				DropDownStyle = ComboBoxStyle.DropDownList,
 				Font = new Font("Segoe UI", 12)
 			};
+
+			medicines.Items.AddRange(lookupData["MedicineId"].Select(m => m.Display).ToArray());
+
 			check = new Button
 			{
 				Text = "Submit",
