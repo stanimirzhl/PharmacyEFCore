@@ -11,7 +11,6 @@ namespace PharmacyForm
 		private Panel pnlFields;
 		private Button btnSubmit;
 		private readonly PharmacyController controller;
-		private readonly Dictionary<string, Control> inputControls = new();
 		private Dictionary<string, List<(string Display, object Value)>> lookupData = new();
 
 		public AddDataForm(PharmacyController controller)
